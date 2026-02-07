@@ -33,21 +33,19 @@ function CampaignCreateContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center py-24">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--accent-hi)]" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <CampaignBuilderWrapper
-          type={campaignType}
-          onSave={handleSave}
-          onPreview={handlePreview}
-        />
-      </div>
+    <div className="space-y-6">
+      <CampaignBuilderWrapper
+        type={campaignType}
+        onSave={handleSave}
+        onPreview={handlePreview}
+      />
     </div>
   )
 }
@@ -56,8 +54,8 @@ function CampaignCreateContent() {
 export default function CreateCampaignPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <Loader2 className="w-12 h-12 animate-spin text-white" />
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-10 h-10 animate-spin text-[color:var(--accent-hi)]" />
       </div>
     }>
       <CampaignCreateContent />

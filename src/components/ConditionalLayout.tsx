@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { ReactNode } from 'react'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 
 interface ConditionalLayoutProps {
   children: ReactNode
@@ -10,19 +11,20 @@ interface ConditionalLayoutProps {
 export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname()
   
-  // Public pages should have white background
-  const isPublicPage = pathname === '/' || 
-                      pathname.startsWith('/auth/') || 
-                      pathname.startsWith('/terms') || 
-                      pathname.startsWith('/privacy') || 
-                      pathname.startsWith('/cookies') ||
-                      pathname.startsWith('/help') ||
-                      pathname.startsWith('/contact') ||
-                      pathname.startsWith('/status')
+  const isPublicPage =
+    pathname === '/' ||
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/terms') ||
+    pathname.startsWith('/privacy') ||
+    pathname.startsWith('/cookies') ||
+    pathname.startsWith('/help') ||
+    pathname === '/contact' ||
+    pathname.startsWith('/contact/') ||
+    pathname.startsWith('/status')
   
-  return (
-    <div className={isPublicPage ? 'bg-white min-h-screen' : 'bg-black min-h-screen'}>
-      {children}
-    </div>
-  )
+  if (isPublicPage) {
+    return <div className="min-h-screen bg-white text-black">{children}</div>
+  }
+
+  return <DashboardLayout>{children}</DashboardLayout>
 }

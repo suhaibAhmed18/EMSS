@@ -212,65 +212,54 @@ export default function EditCampaignPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center py-24">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--accent-hi)]" />
       </div>
     )
   }
 
   if (error || !campaign) {
     return (
-      <div className="min-h-screen bg-black text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-4">Campaign Not Found</h1>
-            <p className="text-gray-400 mb-8">{error}</p>
-            <Link href="/campaigns" className="btn-primary">
-              Back to Campaigns
-            </Link>
-          </div>
+      <div className="flex items-center justify-center py-24">
+        <div className="card-premium w-full max-w-md p-10 text-center">
+          <h1 className="text-2xl font-semibold text-white mb-4">Campaign Not Found</h1>
+          <p className="text-white/60 mb-8">{error}</p>
+          <Link href="/campaigns" className="btn-primary">
+            Back to Campaigns
+          </Link>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link href={`/campaigns/${campaignType}/${campaignId}/view`} className="inline-flex items-center text-gray-400 hover:text-white mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Campaign
+    <div className="max-w-7xl mx-auto space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <Link
+            href={`/campaigns/${campaignType}/${campaignId}/view`}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.02] text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"
+            aria-label="Back to campaign"
+          >
+            <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-gradient-accent rounded-lg flex items-center justify-center mr-4">
-                {campaignType === 'email' ? (
-                  <Mail className="w-6 h-6 text-white" />
-                ) : (
-                  <MessageSquare className="w-6 h-6 text-white" />
-                )}
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white">Edit Campaign</h1>
-                <p className="text-gray-400">
-                  {campaignType === 'email' ? 'Email Campaign' : 'SMS Campaign'}
-                </p>
-              </div>
+
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(4,31,26,0.95),rgba(10,83,70,0.92))] text-white shrink-0">
+              {campaignType === 'email' ? <Mail className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
             </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="btn-primary flex items-center"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
+            <div className="min-w-0">
+              <h1 className="text-3xl font-semibold text-white truncate">Edit Campaign</h1>
+              <p className="text-white/60">{campaignType === 'email' ? 'Email campaign' : 'SMS campaign'}</p>
             </div>
           </div>
         </div>
+
+        <button onClick={handleSave} disabled={saving} className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+          <Save className="w-4 h-4" />
+          {saving ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
 
         {/* Edit Form */}
         <div className="space-y-6">
@@ -280,7 +269,7 @@ export default function EditCampaignPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Campaign Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
+                <label className="block text-sm font-medium text-white/55 mb-2">
                   Campaign Name *
                 </label>
                 <input
@@ -296,7 +285,7 @@ export default function EditCampaignPage() {
                 <>
                   {/* Email Subject */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                    <label className="block text-sm font-medium text-white/55 mb-2">
                       Subject Line *
                     </label>
                     <input
@@ -310,7 +299,7 @@ export default function EditCampaignPage() {
 
                   {/* From Name */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                    <label className="block text-sm font-medium text-white/55 mb-2">
                       From Name *
                     </label>
                     <input
@@ -324,7 +313,7 @@ export default function EditCampaignPage() {
 
                   {/* From Email */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                    <label className="block text-sm font-medium text-white/55 mb-2">
                       From Email *
                     </label>
                     <input
@@ -340,7 +329,7 @@ export default function EditCampaignPage() {
                 <>
                   {/* From Number */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                    <label className="block text-sm font-medium text-white/55 mb-2">
                       From Number *
                     </label>
                     <input
@@ -400,7 +389,6 @@ export default function EditCampaignPage() {
             </div>
           </div>
         </div>
-      </div>
     </div>
   )
 }

@@ -84,9 +84,9 @@ export default function CampaignPreview({
   )
 
   const renderSMSPreview = () => (
-    <div className="bg-gray-900 rounded-2xl p-4 max-w-sm mx-auto">
-      <div className="bg-gray-800 rounded-lg p-3">
-        <div className="text-xs text-gray-400 mb-2">From: {fromNumber}</div>
+    <div className="max-w-sm mx-auto rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md shadow-premium">
+      <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+        <div className="text-xs text-white/55 mb-2">From: {fromNumber}</div>
         <div className="text-white text-sm whitespace-pre-wrap">
           {content || 'No message content to preview'}
         </div>
@@ -96,10 +96,10 @@ export default function CampaignPreview({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-4xl bg-gray-900 rounded-2xl p-6 shadow-xl">
+        <div className="relative w-full max-w-4xl rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-3xl backdrop-blur-xl">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-medium text-white flex items-center">
               {type === 'email' ? (
@@ -116,7 +116,7 @@ export default function CampaignPreview({
             </h3>
             <button
               type="button"
-              className="text-gray-400 hover:text-white"
+              className="text-white/55 hover:text-white transition-colors"
               onClick={onClose}
             >
               <X className="w-6 h-6" />
@@ -127,16 +127,16 @@ export default function CampaignPreview({
             {type === 'email' ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-center space-x-4 mb-4">
-                  <button className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg">
-                    <Monitor className="w-4 h-4 mr-2" />
+                  <button type="button" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm font-medium text-white">
+                    <Monitor className="w-4 h-4" />
                     Desktop
                   </button>
-                  <button className="flex items-center px-3 py-2 bg-gray-700 text-gray-300 rounded-lg">
-                    <Smartphone className="w-4 h-4 mr-2" />
+                  <button type="button" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-medium text-white/70 hover:text-white hover:bg-white/[0.05] transition-colors">
+                    <Smartphone className="w-4 h-4" />
                     Mobile
                   </button>
                 </div>
-                <div className="border border-gray-700 rounded-lg overflow-hidden">
+                <div className="border border-white/10 rounded-2xl overflow-hidden">
                   {renderEmailPreview()}
                 </div>
               </div>

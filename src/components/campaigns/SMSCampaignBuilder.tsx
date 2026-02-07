@@ -1,11 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { MessageSquare, AlertTriangle, Info, Smartphone } from 'lucide-react'
+import { AlertTriangle, Info, Smartphone } from 'lucide-react'
+
+interface SMSMessageMetadata {
+  characterCount: number
+  segmentCount: number
+  includeOptOut: boolean
+}
 
 interface SMSCampaignBuilderProps {
   initialMessage?: string
-  onMessageChange?: (message: string, metadata: any) => void
+  onMessageChange?: (message: string, metadata: SMSMessageMetadata) => void
   onPreview?: () => void
   fromNumber?: string
   recipientCount?: number
@@ -14,7 +20,6 @@ interface SMSCampaignBuilderProps {
 export default function SMSCampaignBuilder({
   initialMessage = '',
   onMessageChange,
-  onPreview,
   fromNumber = '+1 (555) 123-4567',
   recipientCount = 0
 }: SMSCampaignBuilderProps) {
@@ -48,7 +53,7 @@ export default function SMSCampaignBuilder({
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
+            <label className="block text-sm font-medium text-white/70 mb-2">
               Message Content *
             </label>
             <div className="relative">
@@ -59,11 +64,11 @@ export default function SMSCampaignBuilder({
                 placeholder="🔥 FLASH SALE: 50% off everything! Use code FLASH50. Shop now: [link]"
                 maxLength={140} // Leave room for opt-out text
               />
-              <div className="absolute bottom-3 right-3 text-sm text-gray-400">
+              <div className="absolute bottom-3 right-3 text-sm text-white/55">
                 {message.length}/140
               </div>
             </div>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-white/45 mt-2">
               Keep your message under 140 characters to leave room for opt-out instructions.
             </p>
           </div>
@@ -74,9 +79,9 @@ export default function SMSCampaignBuilder({
               id="includeOptOut"
               checked={includeOptOut}
               onChange={(e) => setIncludeOptOut(e.target.checked)}
-              className="mr-3"
+              className="w-4 h-4 text-[color:var(--accent-hi)] bg-white/10 border-white/20 rounded focus:ring-white/20 mr-3"
             />
-            <label htmlFor="includeOptOut" className="text-white">
+            <label htmlFor="includeOptOut" className="text-white/80">
               Automatically include opt-out instructions (Reply STOP to opt out)
             </label>
           </div>
@@ -91,10 +96,10 @@ export default function SMSCampaignBuilder({
             Mobile Preview
           </h3>
           
-          <div className="bg-gray-900 rounded-2xl p-4 max-w-sm mx-auto">
-            <div className="bg-gray-800 rounded-lg p-3 mb-2">
-              <div className="text-xs text-gray-400 mb-1">From: {fromNumber}</div>
-              <div className="text-white text-sm">
+          <div className="max-w-sm mx-auto rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md shadow-premium">
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+              <div className="text-xs text-white/55 mb-1">From: {fromNumber}</div>
+              <div className="text-white text-sm whitespace-pre-wrap">
                 {finalMessage || 'Your message will appear here...'}
               </div>
             </div>
@@ -106,19 +111,19 @@ export default function SMSCampaignBuilder({
           
           <div className="space-y-4">
             <div className="flex justify-between">
-              <span className="text-gray-400">Character Count:</span>
+              <span className="text-white/60">Character Count:</span>
               <span className="text-white font-medium">{characterCount}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">SMS Segments:</span>
+              <span className="text-white/60">SMS Segments:</span>
               <span className="text-white font-medium">{segmentCount}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">Recipients:</span>
+              <span className="text-white/60">Recipients:</span>
               <span className="text-white font-medium">{recipientCount.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">Estimated Cost:</span>
+              <span className="text-white/60">Estimated Cost:</span>
               <span className="text-white font-medium">${estimatedCost}</span>
             </div>
           </div>
@@ -126,12 +131,12 @@ export default function SMSCampaignBuilder({
       </div>
 
       {/* Compliance Notice */}
-      <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-lg p-4">
+      <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
         <div className="flex items-start">
-          <AlertTriangle className="w-5 h-5 text-yellow-400 mr-3 mt-0.5 flex-shrink-0" />
+          <AlertTriangle className="w-5 h-5 text-amber-200 mr-3 mt-0.5 flex-shrink-0" />
           <div>
-            <h4 className="font-medium text-yellow-400 mb-2">SMS Compliance Requirements</h4>
-            <ul className="text-sm text-yellow-200 space-y-1">
+            <h4 className="font-medium text-amber-200 mb-2">SMS Compliance Requirements</h4>
+            <ul className="text-sm text-amber-100/90 space-y-1">
               <li>• All recipients must have explicitly opted in to receive SMS messages</li>
               <li>• Include clear opt-out instructions in every message</li>
               <li>• Honor opt-out requests immediately</li>
@@ -143,12 +148,12 @@ export default function SMSCampaignBuilder({
       </div>
 
       {/* Message Tips */}
-      <div className="bg-blue-900/20 border border-blue-600/30 rounded-lg p-4">
+      <div className="rounded-2xl border border-white/10 border-l-2 border-l-[color:var(--accent-hi)] bg-white/[0.02] p-4">
         <div className="flex items-start">
-          <Info className="w-5 h-5 text-blue-400 mr-3 mt-0.5 flex-shrink-0" />
+          <Info className="w-5 h-5 text-[color:var(--accent-hi)] mr-3 mt-0.5 flex-shrink-0" />
           <div>
-            <h4 className="font-medium text-blue-400 mb-2">SMS Best Practices</h4>
-            <ul className="text-sm text-blue-200 space-y-1">
+            <h4 className="font-medium text-[color:var(--accent-hi)] mb-2">SMS Best Practices</h4>
+            <ul className="text-sm text-white/70 space-y-1">
               <li>• Keep messages concise and actionable</li>
               <li>• Use emojis sparingly to add personality</li>
               <li>• Include a clear call-to-action</li>

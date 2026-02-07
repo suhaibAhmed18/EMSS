@@ -163,46 +163,37 @@ export default function NewSMSCampaignPage() {
 
   if (loading || loadingStores) {
     return (
-      <div className="min-h-screen bg-black text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-800 rounded w-64 mb-6"></div>
-            <div className="space-y-6">
-              <div className="bg-gray-900 rounded-lg p-6 h-32"></div>
-              <div className="bg-gray-900 rounded-lg p-6 h-48"></div>
-            </div>
-          </div>
+      <div className="animate-pulse max-w-4xl mx-auto space-y-6">
+        <div className="h-8 w-64 rounded-xl bg-white/[0.06]" />
+        <div className="space-y-6">
+          <div className="h-32 rounded-2xl border border-white/10 bg-white/[0.03]" />
+          <div className="h-48 rounded-2xl border border-white/10 bg-white/[0.03]" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => router.back()}
-            className="p-2 text-gray-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Create SMS Campaign
-            </h1>
-            <p className="text-gray-400 mt-2">
-              Send SMS messages to your customers
-            </p>
-          </div>
+    <div className="max-w-6xl mx-auto space-y-8">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => router.back()}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.02] text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h1 className="text-3xl font-semibold text-premium">Create SMS Campaign</h1>
+          <p className="text-white/60 mt-2">Send SMS messages to your customers.</p>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Information */}
-            <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+            <div className="card-premium p-6">
               <h2 className="text-xl font-semibold text-white mb-4">Campaign Details</h2>
               <div className="space-y-4">
                 <div>
@@ -213,7 +204,7 @@ export default function NewSMSCampaignPage() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-premium w-full"
                     placeholder="e.g., Flash Sale Alert"
                     required
                   />
@@ -225,7 +216,7 @@ export default function NewSMSCampaignPage() {
                   <select
                     value={formData.store_id}
                     onChange={(e) => setFormData({ ...formData, store_id: e.target.value })}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-premium w-full"
                     required
                   >
                     <option value="">Select a store</option>
@@ -240,7 +231,7 @@ export default function NewSMSCampaignPage() {
             </div>
 
             {/* SMS Content */}
-            <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+            <div className="card-premium p-6">
               <h2 className="text-xl font-semibold text-white mb-4">SMS Message</h2>
               <div className="space-y-4">
                 <div>
@@ -249,7 +240,7 @@ export default function NewSMSCampaignPage() {
                       Message *
                     </label>
                     <span className={`text-sm ${
-                      messageLength > maxLength ? 'text-red-400' : 'text-gray-400'
+                      messageLength > maxLength ? 'text-red-400' : 'text-white/55'
                     }`}>
                       {messageLength}/{maxLength}
                     </span>
@@ -257,13 +248,13 @@ export default function NewSMSCampaignPage() {
                   <textarea
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-premium w-full"
                     rows={4}
                     placeholder="🔥 Flash Sale! 50% off everything. Use code FLASH50. Shop now: [link]"
                     required
                     maxLength={maxLength}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-white/45 mt-1">
                     Keep your message under 160 characters for best delivery rates
                   </p>
                 </div>
@@ -275,7 +266,7 @@ export default function NewSMSCampaignPage() {
                     type="tel"
                     value={formData.from_number}
                     onChange={(e) => setFormData({ ...formData, from_number: e.target.value })}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-premium w-full"
                     placeholder="+1234567890"
                     required
                   />
@@ -284,7 +275,7 @@ export default function NewSMSCampaignPage() {
             </div>
 
             {/* Send Options */}
-            <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+            <div className="card-premium p-6">
               <h2 className="text-xl font-semibold text-white mb-4">Send Options</h2>
               <div className="space-y-4">
                 <div className="flex gap-4">
@@ -295,9 +286,9 @@ export default function NewSMSCampaignPage() {
                       value="now"
                       checked={formData.send_type === 'now'}
                       onChange={(e) => setFormData({ ...formData, send_type: e.target.value })}
-                      className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-700 focus:ring-blue-500"
+                      className="w-4 h-4 text-[color:var(--accent-hi)] bg-white/10 border-white/20 focus:ring-white/20"
                     />
-                    <span className="text-gray-300">Send Now</span>
+                    <span className="text-white/70">Send Now</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -306,9 +297,9 @@ export default function NewSMSCampaignPage() {
                       value="later"
                       checked={formData.send_type === 'later'}
                       onChange={(e) => setFormData({ ...formData, send_type: e.target.value })}
-                      className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-700 focus:ring-blue-500"
+                      className="w-4 h-4 text-[color:var(--accent-hi)] bg-white/10 border-white/20 focus:ring-white/20"
                     />
-                    <span className="text-gray-300">Schedule for Later</span>
+                    <span className="text-white/70">Schedule for Later</span>
                   </label>
                 </div>
 
@@ -321,7 +312,7 @@ export default function NewSMSCampaignPage() {
                       type="datetime-local"
                       value={formData.scheduled_at}
                       onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="input-premium w-full"
                       min={new Date().toISOString().slice(0, 16)}
                       required
                     />
@@ -334,30 +325,30 @@ export default function NewSMSCampaignPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Preview */}
-            <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+            <div className="card-premium p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Preview</h3>
-              <div className="bg-gray-800 rounded-lg p-4">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <Smartphone className="w-4 h-4 text-blue-400" />
-                  <span className="text-sm text-gray-400">SMS Preview</span>
+                  <Smartphone className="w-4 h-4 text-white/70" />
+                  <span className="text-sm text-white/55">SMS Preview</span>
                 </div>
-                <div className="bg-blue-600 text-white p-3 rounded-lg text-sm max-w-xs">
+                <div className="bg-[linear-gradient(135deg,rgba(4,31,26,0.98),rgba(10,83,70,0.95))] text-white p-3 rounded-2xl border border-white/10 text-sm max-w-xs">
                   {formData.message || 'Your SMS message will appear here...'}
                 </div>
-                <div className="text-xs text-gray-500 mt-2">
+                <div className="text-xs text-white/45 mt-2">
                   From: {formData.from_number || '+1234567890'}
                 </div>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+            <div className="card-premium p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Actions</h3>
               <div className="space-y-3">
                 <button
                   onClick={handleSaveDraft}
                   disabled={saving}
-                  className="w-full bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                  className="btn-secondary w-full justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save className="w-4 h-4" />
                   {saving ? 'Saving...' : 'Save Draft'}
@@ -365,7 +356,7 @@ export default function NewSMSCampaignPage() {
                 <button
                   onClick={handleSendCampaign}
                   disabled={sending}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50"
+                  className="btn-primary w-full justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {formData.send_type === 'now' ? (
                     <>
@@ -383,25 +374,24 @@ export default function NewSMSCampaignPage() {
             </div>
 
             {/* Campaign Stats */}
-            <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+            <div className="card-premium p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Estimated Reach</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Total Contacts</span>
+                  <span className="text-white/55">Total Contacts</span>
                   <span className="text-white font-semibold">-</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-400">SMS Subscribers</span>
+                  <span className="text-white/55">SMS Subscribers</span>
                   <span className="text-white font-semibold">-</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Estimated Delivery</span>
+                  <span className="text-white/55">Estimated Delivery</span>
                   <span className="text-white font-semibold">-</span>
                 </div>
               </div>
             </div>
           </div>
-        </div>
       </div>
     </div>
   )

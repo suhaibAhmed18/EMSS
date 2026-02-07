@@ -9,7 +9,6 @@ import {
   Mail, 
   MessageSquare, 
   Clock, 
-  Users, 
   ShoppingCart, 
   UserPlus, 
   DollarSign,
@@ -214,67 +213,58 @@ export default function CreateAutomationPage() {
 
   if (loading || loadingStores) {
     return (
-      <div className="min-h-screen bg-black text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-800 rounded w-64 mb-6"></div>
-            <div className="space-y-6">
-              <div className="bg-gray-900 rounded-lg p-6 h-32"></div>
-              <div className="bg-gray-900 rounded-lg p-6 h-48"></div>
-            </div>
-          </div>
+      <div className="animate-pulse max-w-4xl mx-auto space-y-6">
+        <div className="h-8 w-64 rounded-xl bg-white/[0.06]" />
+        <div className="space-y-6">
+          <div className="h-32 rounded-2xl border border-white/10 bg-white/[0.03]" />
+          <div className="h-48 rounded-2xl border border-white/10 bg-white/[0.03]" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => router.back()}
-            className="p-2 text-gray-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Create Automation
-            </h1>
-            <p className="text-gray-400 mt-2">
-              Build automated workflows to engage customers at the right time
-            </p>
-          </div>
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => router.back()}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.02] text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h1 className="text-3xl font-semibold text-premium">Create Automation</h1>
+          <p className="text-white/60 mt-2">Build automated workflows to engage customers at the right time.</p>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-8">
           {/* Basic Information */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <div className="card-premium p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Basic Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-white/70 mb-2">
                   Automation Name *
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-premium w-full"
                   placeholder="e.g., Welcome Series"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-white/70 mb-2">
                   Store *
                 </label>
                 <select
                   value={formData.store_id}
                   onChange={(e) => setFormData({ ...formData, store_id: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-premium w-full"
                   required
                 >
                   <option value="">Select a store</option>
@@ -287,13 +277,13 @@ export default function CreateAutomationPage() {
               </div>
             </div>
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white/70 mb-2">
                 Description
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-premium w-full"
                 rows={3}
                 placeholder="Describe what this automation does..."
               />
@@ -301,38 +291,38 @@ export default function CreateAutomationPage() {
           </div>
 
           {/* Trigger Selection */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <div className="card-premium p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Trigger</h2>
-            <p className="text-gray-400 mb-4">Choose what event will start this automation</p>
+            <p className="text-white/60 mb-4">Choose what event will start this automation.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {TRIGGER_TYPES.map((trigger) => (
                 <div
                   key={trigger.id}
-                  className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                  className={`border rounded-2xl p-4 cursor-pointer transition-colors ${
                     formData.trigger_type === trigger.id
-                      ? 'border-blue-500 bg-blue-500/10'
-                      : 'border-gray-700 hover:border-gray-600'
+                      ? 'border-white/15 bg-white/[0.04]'
+                      : 'border-white/10 hover:border-white/15 hover:bg-white/[0.02]'
                   }`}
                   onClick={() => setFormData({ ...formData, trigger_type: trigger.id })}
                 >
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                    <div className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-[linear-gradient(135deg,rgba(4,31,26,0.95),rgba(10,83,70,0.92))] text-white">
                       {trigger.icon}
                     </div>
                     <h3 className="font-medium text-white">{trigger.name}</h3>
                   </div>
-                  <p className="text-sm text-gray-400">{trigger.description}</p>
+                  <p className="text-sm text-white/55">{trigger.description}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Actions */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <div className="card-premium p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-semibold text-white">Actions</h2>
-                <p className="text-gray-400">Define what happens when the automation is triggered</p>
+                <p className="text-white/60">Define what happens when the automation is triggered.</p>
               </div>
               <div className="relative">
                 <select
@@ -342,7 +332,7 @@ export default function CreateAutomationPage() {
                       e.target.value = ''
                     }
                   }}
-                  className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-premium text-sm py-2.5"
                 >
                   <option value="">Add Action</option>
                   {ACTION_TYPES.map((action) => (
@@ -355,17 +345,20 @@ export default function CreateAutomationPage() {
             </div>
 
             {actions.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
+              <div className="text-center py-8 text-white/60">
                 <Settings className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>No actions added yet. Add your first action to get started.</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {actions.map((action, index) => (
-                  <div key={action.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                  <div
+                    key={action.id}
+                    className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 transition-colors hover:bg-white/[0.03] hover:border-white/15"
+                  >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-sm font-medium">
+                        <span className="grid h-6 w-6 place-items-center rounded-full border border-white/10 bg-[linear-gradient(135deg,rgba(4,31,26,0.95),rgba(10,83,70,0.92))] text-xs font-semibold text-white shadow-[0_10px_24px_rgba(0,0,0,0.45)]">
                           {index + 1}
                         </span>
                         <h3 className="font-medium text-white">
@@ -375,7 +368,7 @@ export default function CreateAutomationPage() {
                       <button
                         type="button"
                         onClick={() => removeAction(action.id)}
-                        className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+                        className="p-1 text-white/55 hover:text-red-200 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -385,7 +378,7 @@ export default function CreateAutomationPage() {
                     {action.type === 'send_email' && (
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                          <label className="block text-sm font-medium text-white/70 mb-1">
                             Email Subject
                           </label>
                           <input
@@ -394,12 +387,12 @@ export default function CreateAutomationPage() {
                             onChange={(e) => updateAction(action.id, {
                               config: { ...action.config, subject: e.target.value }
                             })}
-                            className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm"
+                            className="input-premium w-full text-sm py-2.5"
                             placeholder="Enter email subject"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                          <label className="block text-sm font-medium text-white/70 mb-1">
                             Email Content
                           </label>
                           <textarea
@@ -407,7 +400,7 @@ export default function CreateAutomationPage() {
                             onChange={(e) => updateAction(action.id, {
                               config: { ...action.config, content: e.target.value }
                             })}
-                            className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm"
+                            className="input-premium w-full text-sm py-2.5"
                             rows={3}
                             placeholder="Enter email content"
                           />
@@ -417,7 +410,7 @@ export default function CreateAutomationPage() {
 
                     {action.type === 'send_sms' && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-white/70 mb-1">
                           SMS Message
                         </label>
                         <textarea
@@ -425,7 +418,7 @@ export default function CreateAutomationPage() {
                           onChange={(e) => updateAction(action.id, {
                             config: { ...action.config, message: e.target.value }
                           })}
-                          className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm"
+                          className="input-premium w-full text-sm py-2.5"
                           rows={2}
                           placeholder="Enter SMS message"
                         />
@@ -435,7 +428,7 @@ export default function CreateAutomationPage() {
                     {action.type === 'wait' && (
                       <div className="flex gap-3">
                         <div className="flex-1">
-                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                          <label className="block text-sm font-medium text-white/70 mb-1">
                             Duration
                           </label>
                           <input
@@ -444,12 +437,12 @@ export default function CreateAutomationPage() {
                             onChange={(e) => updateAction(action.id, {
                               config: { ...action.config, duration: parseInt(e.target.value) }
                             })}
-                            className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm"
+                            className="input-premium w-full text-sm py-2.5"
                             min="1"
                           />
                         </div>
                         <div className="flex-1">
-                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                          <label className="block text-sm font-medium text-white/70 mb-1">
                             Unit
                           </label>
                           <select
@@ -457,7 +450,7 @@ export default function CreateAutomationPage() {
                             onChange={(e) => updateAction(action.id, {
                               config: { ...action.config, unit: e.target.value }
                             })}
-                            className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm"
+                            className="input-premium w-full text-sm py-2.5"
                           >
                             <option value="minutes">Minutes</option>
                             <option value="hours">Hours</option>
@@ -469,7 +462,7 @@ export default function CreateAutomationPage() {
 
                     {action.type === 'add_tag' && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-white/70 mb-1">
                           Tag Name
                         </label>
                         <input
@@ -478,7 +471,7 @@ export default function CreateAutomationPage() {
                           onChange={(e) => updateAction(action.id, {
                             config: { ...action.config, tag: e.target.value }
                           })}
-                          className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm"
+                          className="input-premium w-full text-sm py-2.5"
                           placeholder="Enter tag name"
                         />
                       </div>
@@ -486,15 +479,15 @@ export default function CreateAutomationPage() {
 
                     {/* Delay */}
                     {index > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-700">
-                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                      <div className="mt-3 pt-3 border-t border-white/10">
+                        <label className="block text-sm font-medium text-white/70 mb-1">
                           Delay before this action (minutes)
                         </label>
                         <input
                           type="number"
                           value={action.delay}
                           onChange={(e) => updateAction(action.id, { delay: parseInt(e.target.value) || 0 })}
-                          className="w-32 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm"
+                          className="input-premium w-32 text-sm py-2.5"
                           min="0"
                         />
                       </div>
@@ -506,7 +499,7 @@ export default function CreateAutomationPage() {
           </div>
 
           {/* Settings */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <div className="card-premium p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Settings</h2>
             <div className="flex items-center gap-3">
               <input
@@ -514,9 +507,9 @@ export default function CreateAutomationPage() {
                 id="is_active"
                 checked={formData.is_active}
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-700 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-[color:var(--accent-hi)] bg-white/10 border-white/20 rounded focus:ring-white/20"
               />
-              <label htmlFor="is_active" className="text-gray-300">
+              <label htmlFor="is_active" className="text-white/70">
                 Activate automation immediately after creation
               </label>
             </div>
@@ -527,21 +520,20 @@ export default function CreateAutomationPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+              className="btn-secondary"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-medium flex items-center gap-2 transition-all duration-200 disabled:opacity-50"
+              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-5 h-5" />
               {saving ? 'Creating...' : 'Create Automation'}
             </button>
           </div>
         </form>
-      </div>
     </div>
   )
 }

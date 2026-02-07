@@ -388,7 +388,7 @@ export default function SettingsPage() {
                     <h3 className="text-lg font-semibold text-white mb-4">Webhook Settings</h3>
                     <div className="space-y-4">
                       {shopifyData.webhooks.map((webhook: any) => (
-                        <div key={webhook.name} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                        <div key={webhook.name} className="flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/[0.02]">
                           <div>
                             <h4 className="font-medium text-white">{webhook.name}</h4>
                             <p className="text-sm text-gray-400">
@@ -403,7 +403,7 @@ export default function SettingsPage() {
                               onChange={(e) => toggleWebhook(webhook.name, e.target.checked)}
                               className="sr-only peer"
                             />
-                            <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[color:var(--accent)]"></div>
                           </label>
                         </div>
                       ))}
@@ -589,25 +589,25 @@ export default function SettingsPage() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-4">SMS Settings</h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                <div className="flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/[0.02]">
                   <div>
                     <h4 className="font-medium text-white">Auto-opt out on STOP</h4>
                     <p className="text-sm text-gray-400">Automatically unsubscribe users who reply STOP</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[color:var(--accent)]"></div>
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                <div className="flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/[0.02]">
                   <div>
                     <h4 className="font-medium text-white">Delivery receipts</h4>
                     <p className="text-sm text-gray-400">Track message delivery status</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[color:var(--accent)]"></div>
                   </label>
                 </div>
               </div>
@@ -639,14 +639,14 @@ export default function SettingsPage() {
                   { name: 'Monthly reports', description: 'Receive monthly performance summaries', enabled: true },
                   { name: 'System alerts', description: 'Important system notifications and updates', enabled: true },
                 ].map((notification) => (
-                  <div key={notification.name} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                  <div key={notification.name} className="flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/[0.02]">
                     <div>
                       <h4 className="font-medium text-white">{notification.name}</h4>
                       <p className="text-sm text-gray-400">{notification.description}</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" defaultChecked={notification.enabled} className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[color:var(--accent)]"></div>
                     </label>
                   </div>
                 ))}
@@ -698,7 +698,7 @@ export default function SettingsPage() {
               <h3 className="text-lg font-semibold text-white mb-4">Account Security</h3>
               <div className="card-premium p-6">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                  <div className="flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/[0.02]">
                     <div>
                       <h4 className="font-medium text-white">API Access</h4>
                       <p className="text-sm text-gray-400">Email and SMS API keys are configured securely</p>
@@ -707,7 +707,7 @@ export default function SettingsPage() {
                       ✓ Configured
                     </div>
                   </div>
-                  <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                  <div className="flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/[0.02]">
                     <div>
                       <h4 className="font-medium text-white">Data Encryption</h4>
                       <p className="text-sm text-gray-400">All sensitive data is encrypted at rest</p>
@@ -728,43 +728,36 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-premium mb-2">Settings</h1>
-          <p className="text-gray-400">Manage your account and platform configuration</p>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-semibold text-premium mb-2">Settings</h1>
+        <p className="text-white/60">Manage your account and platform configuration.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="lg:col-span-1">
+          <div className="card-premium p-6">
+            <nav className="space-y-2">
+              {settingsTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center px-3 py-2 text-left rounded-xl border transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-white/[0.06] border-white/10 text-white'
+                      : 'border-transparent text-white/70 hover:text-white hover:bg-white/[0.04] hover:border-white/10'
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4 mr-3" />
+                  {tab.name}
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="card-premium p-6">
-              <nav className="space-y-2">
-                {settingsTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center px-3 py-2 text-left rounded-lg transition-colors ${
-                      activeTab === tab.id
-                        ? 'bg-white text-black'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                    }`}
-                  >
-                    <tab.icon className="w-4 h-4 mr-3" />
-                    {tab.name}
-                  </button>
-                ))}
-              </nav>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            <div className="card-premium p-6">
-              {renderTabContent()}
-            </div>
-          </div>
+        <div className="lg:col-span-3">
+          <div className="card-premium p-6">{renderTabContent()}</div>
         </div>
       </div>
       

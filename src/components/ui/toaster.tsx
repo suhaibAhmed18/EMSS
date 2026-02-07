@@ -65,7 +65,7 @@ export function Toaster() {
       case 'warning':
         return <AlertTriangle className="w-5 h-5 text-yellow-400" />
       default:
-        return <Info className="w-5 h-5 text-blue-400" />
+        return <Info className="w-5 h-5 text-[color:var(--accent-hi)]" />
     }
   }
 
@@ -78,7 +78,7 @@ export function Toaster() {
       case 'warning':
         return 'border-yellow-500/20 bg-yellow-500/10'
       default:
-        return 'border-blue-500/20 bg-blue-500/10'
+        return 'border-white/10 bg-white/[0.03]'
     }
   }
 
@@ -87,7 +87,7 @@ export function Toaster() {
       {toastList.map((toast) => (
         <div
           key={toast.id}
-          className={`max-w-sm w-full bg-gray-900 border rounded-lg shadow-lg p-4 animate-slide-up ${getStyles(toast.type)}`}
+          className={`max-w-sm w-full rounded-2xl border p-4 shadow-premium backdrop-blur-md animate-slide-up ${getStyles(toast.type)}`}
         >
           <div className="flex items-start">
             <div className="flex-shrink-0">
@@ -100,14 +100,14 @@ export function Toaster() {
                 </p>
               )}
               {toast.description && (
-                <p className="mt-1 text-sm text-gray-300">
+                <p className="mt-1 text-sm text-white/70">
                   {toast.description}
                 </p>
               )}
             </div>
             <div className="ml-4 flex-shrink-0 flex">
               <button
-                className="inline-flex text-gray-400 hover:text-gray-200 focus:outline-none"
+                className="inline-flex text-white/55 hover:text-white focus:outline-none"
                 onClick={() => removeToast(toast.id)}
               >
                 <X className="w-4 h-4" />

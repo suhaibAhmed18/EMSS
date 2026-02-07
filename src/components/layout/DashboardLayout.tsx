@@ -1,177 +1,274 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useSession } from '@/lib/auth/session'
+import {
+  BarChart3,
+  LogOut,
+  Mail,
+  Menu,
+  Settings,
+  ShoppingBag,
+  Store,
+  TrendingUp,
+  Users,
+  X,
+  Zap,
+} from 'lucide-react'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: 'home' },
-  { name: 'Campaigns', href: '/campaigns', icon: 'mail' },
-  { name: 'Contacts', href: '/contacts', icon: 'users' },
-  { name: 'Automations', href: '/automations', icon: 'workflow' },
-  { name: 'Analytics', href: '/analytics', icon: 'chart' },
-  { name: 'Settings', href: '/settings', icon: 'settings' },
-]
+  { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
+  { name: 'Stores', href: '/stores', icon: Store },
+  { name: 'Campaigns', href: '/campaigns', icon: Mail },
+  { name: 'Automations', href: '/automations', icon: Zap },
+  { name: 'Contacts', href: '/contacts', icon: Users },
+  { name: 'Analytics', href: '/analytics', icon: TrendingUp },
+  { name: 'Settings', href: '/settings', icon: Settings },
+] as const
 
-const icons = {
-  home: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-    </svg>
-  ),
-  mail: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-    </svg>
-  ),
-  users: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-    </svg>
-  ),
-  workflow: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-    </svg>
-  ),
-  chart: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-    </svg>
-  ),
-  settings: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  ),
+function isRouteActive(pathname: string, href: string) {
+  if (href === '/dashboard') return pathname === href
+  return pathname === href || pathname.startsWith(`${href}/`)
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
-  const router = useRouter()
-  const { user, signOut } = useSession()
+  const { user, loading, signOut } = useSession()
 
   const handleSignOut = async () => {
     await signOut()
-    router.push('/')
   }
 
+  const activeNavItem = useMemo(
+    () => navigation.find((item) => isRouteActive(pathname, item.href)),
+    [pathname]
+  )
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile sidebar */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-          <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
-            <div className="flex h-16 items-center justify-between px-4">
-              <h1 className="text-xl font-bold text-gray-900">Marketing Platform</h1>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <nav className="flex-1 px-4 py-4">
-              {navigation.map((item) => {
-                const isActive = pathname === item.href
-                return (
+    <div className="app-background">
+      <div className="relative z-10 flex min-h-screen">
+        {/* Mobile sidebar */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <div className="absolute inset-y-0 left-0 w-[19rem] p-3">
+              <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] shadow-3xl backdrop-blur-xl">
+                <div className="flex items-center justify-between px-4 py-4">
                   <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`flex items-center px-3 py-2 mb-1 text-sm font-medium rounded-md ${
-                      isActive
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
+                    href="/dashboard"
+                    className="flex items-center gap-3"
                     onClick={() => setSidebarOpen(false)}
                   >
-                    {icons[item.icon as keyof typeof icons]}
-                    <span className="ml-3">{item.name}</span>
+                    <div className="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.04]">
+                      <ShoppingBag className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="leading-tight">
+                      <div className="text-sm font-semibold text-white">MarketingPro</div>
+                      <div className="text-xs text-white/55">Command center</div>
+                    </div>
                   </Link>
-                )
-              })}
-            </nav>
-          </div>
-        </div>
-      )}
+                  <button
+                    onClick={() => setSidebarOpen(false)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white"
+                    aria-label="Close sidebar"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
 
-      {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
-          <div className="flex items-center h-16 px-4 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-gray-900">Marketing Platform</h1>
-          </div>
-          <nav className="flex-1 px-4 py-4">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center px-3 py-2 mb-1 text-sm font-medium rounded-md ${
-                    isActive
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
-                >
-                  {icons[item.icon as keyof typeof icons]}
-                  <span className="ml-3">{item.name}</span>
-                </Link>
-              )
-            })}
-          </nav>
-        </div>
-      </div>
+                <nav className="flex-1 overflow-y-auto px-3 pb-3 scrollbar-premium">
+                  <div className="mb-3 px-2 text-[11px] font-medium uppercase tracking-wider text-white/45">
+                    Workspace
+                  </div>
+                  <div className="space-y-1">
+                    {navigation.map((item) => {
+                      const active = isRouteActive(pathname, item.href)
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setSidebarOpen(false)}
+                          aria-current={active ? 'page' : undefined}
+                          className={`group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all ${
+                            active
+                              ? 'border border-white/10 bg-white/[0.06] text-white shadow-lg shadow-black/20'
+                              : 'border border-transparent text-white/70 hover:border-white/10 hover:bg-white/[0.04] hover:text-white'
+                          }`}
+                        >
+                          <div
+                            className={`grid h-9 w-9 place-items-center rounded-xl border transition-all ${
+                              active
+                                ? 'border-white/15 bg-[linear-gradient(135deg,rgba(4,31,26,0.95),rgba(10,83,70,0.92))] text-white'
+                                : 'border-white/10 bg-white/[0.03] text-white/70 group-hover:bg-white/[0.05] group-hover:text-white'
+                            }`}
+                          >
+                            <item.icon className="h-4 w-4" />
+                          </div>
+                          <span className="truncate">{item.name}</span>
+                          {active && (
+                            <span className="ml-auto h-2 w-2 rounded-full bg-[color:var(--accent-hi)] shadow-[0_0_0_4px_rgba(255,255,255,0.04)]" />
+                          )}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </nav>
 
-      {/* Main content */}
-      <div className="lg:pl-64">
-        {/* Top bar */}
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
-          <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="text-gray-500 hover:text-gray-600 lg:hidden"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-600">
-                Welcome back, {user?.email}
-              </div>
-              <div className="relative">
-                <button
-                  onClick={handleSignOut}
-                  className="flex items-center text-sm text-gray-600 hover:text-gray-900"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  Sign out
-                </button>
+                <div className="border-t border-white/10 bg-white/[0.02] p-3">
+                  {loading ? (
+                    <div className="h-11 w-full animate-pulse rounded-2xl bg-white/[0.05]" />
+                  ) : user ? (
+                    <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium text-white">{user.email}</div>
+                        <div className="text-xs text-white/55">Signed in</div>
+                      </div>
+                      <button
+                        onClick={handleSignOut}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white"
+                        title="Sign out"
+                        aria-label="Sign out"
+                      >
+                        <LogOut className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Page content */}
-        <main className="py-6">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            {children}
+        {/* Desktop sidebar */}
+        <aside className="hidden lg:flex lg:w-[19rem] lg:flex-col lg:p-3 lg:sticky lg:top-0 lg:h-screen lg:self-start">
+          <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] shadow-premium backdrop-blur-xl">
+            <div className="px-4 py-4">
+              <Link href="/dashboard" className="flex items-center gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.04]">
+                  <ShoppingBag className="h-5 w-5 text-white" />
+                </div>
+                <div className="leading-tight">
+                  <div className="text-sm font-semibold text-white">MarketingPro</div>
+                  <div className="text-xs text-white/55">Command center</div>
+                </div>
+              </Link>
+            </div>
+
+            <nav className="flex-1 overflow-y-auto px-3 pb-3 scrollbar-premium">
+              <div className="mb-3 px-2 text-[11px] font-medium uppercase tracking-wider text-white/45">
+                Workspace
+              </div>
+              <div className="space-y-1">
+                {navigation.map((item) => {
+                  const active = isRouteActive(pathname, item.href)
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      aria-current={active ? 'page' : undefined}
+                      className={`group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all ${
+                        active
+                          ? 'border border-white/10 bg-white/[0.06] text-white shadow-lg shadow-black/20'
+                          : 'border border-transparent text-white/70 hover:border-white/10 hover:bg-white/[0.04] hover:text-white'
+                      }`}
+                    >
+                      <div
+                        className={`grid h-9 w-9 place-items-center rounded-xl border transition-all ${
+                          active
+                            ? 'border-white/15 bg-[linear-gradient(135deg,rgba(4,31,26,0.95),rgba(10,83,70,0.92))] text-white'
+                            : 'border-white/10 bg-white/[0.03] text-white/70 group-hover:bg-white/[0.05] group-hover:text-white'
+                        }`}
+                      >
+                        <item.icon className="h-4 w-4" />
+                      </div>
+                      <span className="truncate">{item.name}</span>
+                      {active && (
+                        <span className="ml-auto h-2 w-2 rounded-full bg-[color:var(--accent-hi)] shadow-[0_0_0_4px_rgba(255,255,255,0.04)]" />
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
+            </nav>
+
+            <div className="border-t border-white/10 bg-white/[0.02] p-3">
+              {loading ? (
+                <div className="h-11 w-full animate-pulse rounded-2xl bg-white/[0.05]" />
+              ) : user ? (
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-white">{user.email}</div>
+                    <div className="text-xs text-white/55">Signed in</div>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white"
+                    title="Sign out"
+                    aria-label="Sign out"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
-        </main>
+        </aside>
+
+        {/* Main content */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-40 border-b border-white/10 bg-black/25 backdrop-blur-xl">
+            <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white lg:hidden"
+                aria-label="Open sidebar"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="text-xs text-white/45">Workspace</div>
+                  <div className="truncate text-sm font-semibold text-white">
+                    {activeNavItem?.name ?? 'Dashboard'}
+                  </div>
+                </div>
+
+                <div className="hidden sm:flex items-center gap-2">
+                  {loading ? (
+                    <div className="h-10 w-40 animate-pulse rounded-2xl bg-white/[0.05]" />
+                  ) : user ? (
+                    <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                      <div className="max-w-[18rem] truncate text-sm text-white/80">{user.email}</div>
+                      <button
+                        onClick={handleSignOut}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white"
+                        title="Sign out"
+                        aria-label="Sign out"
+                      >
+                        <LogOut className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1 py-6">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">{children}</div>
+          </main>
+        </div>
       </div>
     </div>
   )

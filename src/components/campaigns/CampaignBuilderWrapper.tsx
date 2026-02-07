@@ -70,16 +70,14 @@ export default function CampaignBuilderWrapper({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          {type === 'email' ? (
-            <Mail className="w-8 h-8 text-blue-500 mr-3" />
-          ) : (
-            <MessageSquare className="w-8 h-8 text-green-500 mr-3" />
-          )}
+          <div className="mr-3 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(4,31,26,0.95),rgba(10,83,70,0.92))] text-white shadow-[0_22px_60px_rgba(0,0,0,0.55)]">
+            {type === 'email' ? <Mail className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+          </div>
           <div>
             <h1 className="text-2xl font-bold text-white">
               {type === 'email' ? 'Email' : 'SMS'} Campaign Builder
             </h1>
-            <p className="text-gray-400">
+            <p className="text-white/60">
               Create and design your {type === 'email' ? 'email' : 'SMS'} campaign
             </p>
           </div>
@@ -119,7 +117,7 @@ export default function CampaignBuilderWrapper({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
+            <label className="block text-sm font-medium text-white/70 mb-2">
               Campaign Name *
             </label>
             <input
@@ -135,7 +133,7 @@ export default function CampaignBuilderWrapper({
           {type === 'email' ? (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
+                <label className="block text-sm font-medium text-white/70 mb-2">
                   Subject Line *
                 </label>
                 <input
@@ -148,7 +146,7 @@ export default function CampaignBuilderWrapper({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
+                <label className="block text-sm font-medium text-white/70 mb-2">
                   From Name *
                 </label>
                 <input
@@ -160,7 +158,7 @@ export default function CampaignBuilderWrapper({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
+                <label className="block text-sm font-medium text-white/70 mb-2">
                   From Email *
                 </label>
                 <input
@@ -174,7 +172,7 @@ export default function CampaignBuilderWrapper({
             </>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
+              <label className="block text-sm font-medium text-white/70 mb-2">
                 From Number *
               </label>
               <select

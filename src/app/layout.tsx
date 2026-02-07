@@ -1,12 +1,10 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { GeistMono } from 'geist/font/mono'
+import { GeistSans } from 'geist/font/sans'
 import { SessionProvider } from '@/lib/auth/session'
-import { Navigation } from '@/components/navigation'
 import { ConditionalLayout } from '@/components/ConditionalLayout'
 import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
-
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'MarketingPro - Premium Email & SMS Marketing for Shopify',
@@ -20,14 +18,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} antialiased`}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+      <body className="antialiased">
         <SessionProvider>
           <ConditionalLayout>
-            <Navigation />
-            <main>
-              {children}
-            </main>
+            {children}
             <Toaster />
           </ConditionalLayout>
         </SessionProvider>

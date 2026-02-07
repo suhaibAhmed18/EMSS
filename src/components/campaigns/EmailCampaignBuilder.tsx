@@ -256,7 +256,9 @@ export default function EmailCampaignBuilder({
       <div
         key={element.id}
         className={`relative group border-2 transition-all duration-200 ${
-          isSelected ? 'border-blue-500 bg-blue-50/10' : 'border-transparent hover:border-gray-600'
+          isSelected
+            ? 'border-[color:var(--accent)] bg-[rgba(4,31,26,0.04)]'
+            : 'border-transparent hover:border-gray-300'
         } ${isDragged ? 'opacity-50' : ''}`}
         draggable
         onDragStart={(e) => handleDragStart(e, element.id)}
@@ -269,13 +271,13 @@ export default function EmailCampaignBuilder({
           isSelected ? 'opacity-100' : ''
         }`}>
           <button
-            className="p-1 bg-gray-800 text-white rounded text-xs hover:bg-gray-700"
+            className="p-1 rounded-lg border border-white/10 bg-black/70 text-white text-xs hover:bg-black/80 transition-colors"
             title="Move"
           >
             <Move className="w-3 h-3" />
           </button>
           <button
-            className="p-1 bg-gray-800 text-white rounded text-xs hover:bg-gray-700"
+            className="p-1 rounded-lg border border-white/10 bg-black/70 text-white text-xs hover:bg-black/80 transition-colors"
             onClick={(e) => {
               e.stopPropagation()
               deleteElement(element.id)
@@ -293,7 +295,7 @@ export default function EmailCampaignBuilder({
 
         {/* Drop Zone */}
         <div
-          className="absolute -bottom-1 left-0 right-0 h-2 bg-blue-500 opacity-0 hover:opacity-50"
+          className="absolute -bottom-1 left-0 right-0 h-2 bg-[color:var(--accent)] opacity-0 hover:opacity-50"
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, index + 1)}
         />
@@ -343,7 +345,7 @@ export default function EmailCampaignBuilder({
                       handleImageSelect(element.id)
                     }}
                     disabled={uploadingImage}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                    className="btn-primary text-sm disabled:opacity-50"
                   >
                     {uploadingImage ? 'Uploading...' : 'Change Image'}
                   </button>
@@ -423,9 +425,9 @@ export default function EmailCampaignBuilder({
     if (!selectedElement) {
       return (
         <div className="text-center py-8">
-          <Settings className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+          <Settings className="w-12 h-12 text-white/30 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-white mb-2">No Element Selected</h3>
-          <p className="text-gray-400">Select an element to edit its properties</p>
+          <p className="text-white/60">Select an element to edit its properties</p>
         </div>
       )
     }
@@ -440,7 +442,7 @@ export default function EmailCampaignBuilder({
         {element.type === 'text' && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Text</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Text</label>
               <textarea
                 value={element.content.text}
                 onChange={(e) => updateElement(element.id, {
@@ -450,7 +452,7 @@ export default function EmailCampaignBuilder({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Tag</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Tag</label>
               <select
                 value={element.content.tag}
                 onChange={(e) => updateElement(element.id, {
@@ -465,7 +467,7 @@ export default function EmailCampaignBuilder({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Font Size</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Font Size</label>
               <input
                 type="text"
                 value={element.styles.fontSize}
@@ -477,18 +479,18 @@ export default function EmailCampaignBuilder({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Color</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Color</label>
               <input
                 type="color"
                 value={element.styles.color}
                 onChange={(e) => updateElement(element.id, {
                   styles: { ...element.styles, color: e.target.value }
                 })}
-                className="w-full h-10 rounded border border-gray-700"
+                className="w-full h-10 rounded-xl border border-white/10 bg-white/[0.02]"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Alignment</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Alignment</label>
               <select
                 value={element.content.alignment}
                 onChange={(e) => updateElement(element.id, {
@@ -517,7 +519,7 @@ export default function EmailCampaignBuilder({
               <p className="text-xs text-gray-500 mt-1">JPEG, PNG, GIF, WebP (max 5MB)</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Image URL</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Image URL</label>
               <input
                 type="url"
                 value={element.content.src}
@@ -529,7 +531,7 @@ export default function EmailCampaignBuilder({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Alt Text</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Alt Text</label>
               <input
                 type="text"
                 value={element.content.alt}
@@ -541,7 +543,7 @@ export default function EmailCampaignBuilder({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Link URL (optional)</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Link URL (optional)</label>
               <input
                 type="url"
                 value={element.content.link}
@@ -553,7 +555,7 @@ export default function EmailCampaignBuilder({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Alignment</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Alignment</label>
               <select
                 value={element.content.alignment}
                 onChange={(e) => updateElement(element.id, {
@@ -572,7 +574,7 @@ export default function EmailCampaignBuilder({
         {element.type === 'button' && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Button Text</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Button Text</label>
               <input
                 type="text"
                 value={element.content.text}
@@ -583,7 +585,7 @@ export default function EmailCampaignBuilder({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Link URL</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Link URL</label>
               <input
                 type="url"
                 value={element.content.link}
@@ -595,29 +597,29 @@ export default function EmailCampaignBuilder({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Background Color</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Background Color</label>
               <input
                 type="color"
                 value={element.styles.backgroundColor}
                 onChange={(e) => updateElement(element.id, {
                   styles: { ...element.styles, backgroundColor: e.target.value }
                 })}
-                className="w-full h-10 rounded border border-gray-700"
+                className="w-full h-10 rounded-xl border border-white/10 bg-white/[0.02]"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Text Color</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Text Color</label>
               <input
                 type="color"
                 value={element.styles.color}
                 onChange={(e) => updateElement(element.id, {
                   styles: { ...element.styles, color: e.target.value }
                 })}
-                className="w-full h-10 rounded border border-gray-700"
+                className="w-full h-10 rounded-xl border border-white/10 bg-white/[0.02]"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Alignment</label>
+              <label className="block text-sm font-medium text-white/70 mb-2">Alignment</label>
               <select
                 value={element.content.alignment}
                 onChange={(e) => updateElement(element.id, {
@@ -635,7 +637,7 @@ export default function EmailCampaignBuilder({
 
         {element.type === 'spacer' && (
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Height</label>
+            <label className="block text-sm font-medium text-white/70 mb-2">Height</label>
             <input
               type="text"
               value={element.styles.height}
@@ -663,11 +665,11 @@ export default function EmailCampaignBuilder({
               <button
                 key={elementType.type}
                 onClick={() => addElement(elementType.type)}
-                className="w-full p-3 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors text-left"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.02] p-3 cursor-pointer hover:bg-white/[0.04] hover:border-white/15 transition-colors text-left"
                 title={elementType.description}
               >
                 <div className="flex items-center">
-                  <Icon className="w-4 h-4 text-gray-400 mr-2" />
+                  <Icon className="w-4 h-4 text-white/60 mr-2" />
                   <span className="text-sm text-white">{elementType.label}</span>
                 </div>
               </button>
@@ -684,14 +686,22 @@ export default function EmailCampaignBuilder({
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setPreviewMode('desktop')}
-                className={`p-2 rounded ${previewMode === 'desktop' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-colors ${
+                  previewMode === 'desktop'
+                    ? 'border-white/15 bg-white/[0.06] text-white'
+                    : 'border-white/10 bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.05]'
+                }`}
                 title="Desktop Preview"
               >
                 <Monitor className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setPreviewMode('mobile')}
-                className={`p-2 rounded ${previewMode === 'mobile' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-colors ${
+                  previewMode === 'mobile'
+                    ? 'border-white/15 bg-white/[0.06] text-white'
+                    : 'border-white/10 bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.05]'
+                }`}
                 title="Mobile Preview"
               >
                 <Smartphone className="w-4 h-4" />
@@ -732,7 +742,7 @@ export default function EmailCampaignBuilder({
                 
                 {/* Final drop zone */}
                 <div
-                  className="h-8 border-2 border-dashed border-transparent hover:border-blue-500 transition-colors"
+                  className="h-8 border-2 border-dashed border-transparent hover:border-[color:var(--accent)] transition-colors"
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, elements.length)}
                 />

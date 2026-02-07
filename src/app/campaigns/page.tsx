@@ -8,18 +8,14 @@ import {
   Mail, 
   MessageSquare, 
   Search, 
-  Filter, 
-  MoreHorizontal,
   Eye,
   Edit,
   Copy,
   Trash2,
   TrendingUp,
   Users,
-  DollarSign,
   Clock,
-  Send,
-  Calendar
+  Send
 } from 'lucide-react'
 
 interface Campaign {
@@ -119,282 +115,250 @@ export default function CampaignsPage() {
     return matchesSearch && matchesType && matchesStatus
   })
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'sent':
-        return 'bg-green-100 text-green-800'
+        return 'badge badge-success'
       case 'draft':
-        return 'bg-gray-100 text-gray-800'
+        return 'badge badge-muted'
       case 'scheduled':
-        return 'bg-blue-100 text-blue-800'
+        return 'badge badge-warning'
       case 'sending':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'badge badge-warning'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'badge badge-muted'
     }
   }
 
   if (loading || loadingCampaigns) {
     return (
-      <div className="min-h-screen bg-black text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-800 rounded w-48 mb-6"></div>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-gray-900 rounded-lg p-6 h-32"></div>
-              ))}
-            </div>
-          </div>
+      <div className="animate-pulse space-y-6">
+        <div className="h-8 w-48 rounded-xl bg-white/[0.06]" />
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-32 rounded-2xl border border-white/10 bg-white/[0.03]" />
+          ))}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Campaigns
-            </h1>
-            <p className="text-gray-400 mt-2">
-              Create and manage your email and SMS marketing campaigns
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Link
-              href="/campaigns/email/new"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200"
-            >
-              <Mail className="w-4 h-4" />
-              Email Campaign
-            </Link>
-            <Link
-              href="/campaigns/sms/new"
-              className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200"
-            >
-              <MessageSquare className="w-4 h-4" />
-              SMS Campaign
-            </Link>
-          </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold text-premium">Campaigns</h1>
+          <p className="mt-2 text-white/60">Create and manage your email and SMS marketing campaigns.</p>
         </div>
-
-        {/* Filters */}
-        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search campaigns..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value as any)}
-                className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Types</option>
-                <option value="email">Email</option>
-                <option value="sms">SMS</option>
-              </select>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Status</option>
-                <option value="draft">Draft</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="sent">Sent</option>
-              </select>
-            </div>
-          </div>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/campaigns/email/new" className="btn-primary">
+            <Mail className="w-4 h-4" />
+            Email Campaign
+          </Link>
+          <Link href="/campaigns/sms/new" className="btn-secondary">
+            <MessageSquare className="w-4 h-4" />
+            SMS Campaign
+          </Link>
         </div>
-
-        {/* Campaigns List */}
-        {filteredCampaigns.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="flex justify-center gap-4 mb-6">
-              <Mail className="w-16 h-16 text-gray-600" />
-              <MessageSquare className="w-16 h-16 text-gray-600" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-300 mb-2">No campaigns found</h3>
-            <p className="text-gray-500 mb-6">Get started by creating your first campaign</p>
-            <div className="flex justify-center gap-3">
-              <Link
-                href="/campaigns/email/new"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2"
-              >
-                <Mail className="w-5 h-5" />
-                Create Email Campaign
-              </Link>
-              <Link
-                href="/campaigns/sms/new"
-                className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2"
-              >
-                <MessageSquare className="w-5 h-5" />
-                Create SMS Campaign
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredCampaigns.map((campaign) => (
-              <div key={campaign.id} className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 hover:border-gray-700 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                      campaign.type === 'email' 
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600' 
-                        : 'bg-gradient-to-r from-green-600 to-teal-600'
-                    }`}>
-                      {campaign.type === 'email' ? (
-                        <Mail className="w-6 h-6 text-white" />
-                      ) : (
-                        <MessageSquare className="w-6 h-6 text-white" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-white text-lg">{campaign.name}</h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
-                          {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
-                        </span>
-                        <span className="px-2 py-1 bg-gray-800 text-gray-300 rounded-full text-xs font-medium">
-                          {campaign.type.toUpperCase()}
-                        </span>
-                      </div>
-                      {campaign.subject && (
-                        <p className="text-gray-400 mb-3">{campaign.subject}</p>
-                      )}
-                      {campaign.message && (
-                        <p className="text-gray-400 mb-3">{campaign.message.substring(0, 100)}...</p>
-                      )}
-                      
-                      {/* Campaign Metrics */}
-                      <div className="flex items-center gap-6 text-sm">
-                        <div className="flex items-center gap-1 text-gray-400">
-                          <Users className="w-4 h-4" />
-                          <span>Recipients: {campaign.recipient_count}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-gray-400">
-                          <Send className="w-4 h-4" />
-                          <span>Delivered: {campaign.delivered_count}</span>
-                        </div>
-                        {campaign.type === 'email' && (
-                          <>
-                            <div className="flex items-center gap-1 text-gray-400">
-                              <Eye className="w-4 h-4" />
-                              <span>Opened: {campaign.opened_count || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-gray-400">
-                              <TrendingUp className="w-4 h-4" />
-                              <span>Clicked: {campaign.clicked_count || 0}</span>
-                            </div>
-                          </>
-                        )}
-                        <div className="flex items-center gap-1 text-gray-400">
-                          <Clock className="w-4 h-4" />
-                          <span>Created: {new Date(campaign.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={`/campaigns/${campaign.type}/${campaign.id}/view`}
-                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-                      title="View Campaign"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Eye className="w-5 h-5" />
-                    </Link>
-                    <Link
-                      href={`/campaigns/${campaign.type}/${campaign.id}/edit`}
-                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-                      title="Edit Campaign"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Edit className="w-5 h-5" />
-                    </Link>
-                    <button
-                      onClick={(e) => handleDuplicateCampaign(e, campaign.id)}
-                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-                      title="Duplicate Campaign"
-                    >
-                      <Copy className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={(e) => handleDeleteCampaign(e, campaign.id, campaign.name)}
-                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
-                      title="Delete Campaign"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Campaign Stats */}
-        {campaigns.length > 0 && (
-          <div className="mt-12 bg-gray-900/30 border border-gray-800 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Campaign Performance</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Mail className="w-5 h-5 text-blue-400" />
-                  <span className="text-gray-400">Email Campaigns</span>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {campaigns.filter(c => c.type === 'email').length}
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <MessageSquare className="w-5 h-5 text-green-400" />
-                  <span className="text-gray-400">SMS Campaigns</span>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {campaigns.filter(c => c.type === 'sms').length}
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Users className="w-5 h-5 text-purple-400" />
-                  <span className="text-gray-400">Total Recipients</span>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {campaigns.reduce((sum, c) => sum + c.recipient_count, 0).toLocaleString()}
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Send className="w-5 h-5 text-yellow-400" />
-                  <span className="text-gray-400">Total Delivered</span>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {campaigns.reduce((sum, c) => sum + c.delivered_count, 0).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Filters */}
+      <div className="card-premium p-6">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/45 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search campaigns..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input-premium w-full pl-10 pr-4 py-2.5 text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value as any)}
+              className="input-premium px-3 py-2.5 text-sm"
+            >
+              <option value="all">All Types</option>
+              <option value="email">Email</option>
+              <option value="sms">SMS</option>
+            </select>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as any)}
+              className="input-premium px-3 py-2.5 text-sm"
+            >
+              <option value="all">All Status</option>
+              <option value="draft">Draft</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="sent">Sent</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Campaigns List */}
+      {filteredCampaigns.length === 0 ? (
+        <div className="card-premium p-10 text-center">
+          <div className="flex justify-center gap-4 mb-6">
+            <Mail className="w-14 h-14 text-white/35" />
+            <MessageSquare className="w-14 h-14 text-white/35" />
+          </div>
+          <h3 className="text-xl font-semibold text-white mb-2">No campaigns found</h3>
+          <p className="text-white/55 mb-6">Get started by creating your first campaign.</p>
+          <div className="flex flex-col sm:flex-row justify-center gap-3">
+            <Link href="/campaigns/email/new" className="btn-primary">
+              <Mail className="w-4 h-4" />
+              Create Email Campaign
+            </Link>
+            <Link href="/campaigns/sms/new" className="btn-secondary">
+              <MessageSquare className="w-4 h-4" />
+              Create SMS Campaign
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredCampaigns.map((campaign) => (
+            <div key={campaign.id} className="card-premium-hover p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 min-w-0">
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(4,31,26,0.95),rgba(10,83,70,0.92))] text-white shrink-0">
+                    {campaign.type === 'email' ? (
+                      <Mail className="w-6 h-6" />
+                    ) : (
+                      <MessageSquare className="w-6 h-6" />
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-white text-lg truncate">{campaign.name}</h3>
+                      <span className={getStatusBadgeClass(campaign.status)}>
+                        {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
+                      </span>
+                      <span className="badge badge-muted">{campaign.type.toUpperCase()}</span>
+                    </div>
+
+                    {campaign.subject && <p className="text-white/60 mb-3 truncate">{campaign.subject}</p>}
+
+                    {campaign.message && (
+                      <p className="text-white/60 mb-3">
+                        {campaign.message.length > 100 ? `${campaign.message.substring(0, 100)}...` : campaign.message}
+                      </p>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/55">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        <span>Recipients: {campaign.recipient_count}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Send className="w-4 h-4" />
+                        <span>Delivered: {campaign.delivered_count}</span>
+                      </div>
+                      {campaign.type === 'email' && (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <Eye className="w-4 h-4" />
+                            <span>Opened: {campaign.opened_count || 0}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4" />
+                            <span>Clicked: {campaign.clicked_count || 0}</span>
+                          </div>
+                        </>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        <span>Created: {new Date(campaign.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Link
+                    href={`/campaigns/${campaign.type}/${campaign.id}/view`}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.02] text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"
+                    title="View Campaign"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Eye className="w-5 h-5" />
+                  </Link>
+                  <Link
+                    href={`/campaigns/${campaign.type}/${campaign.id}/edit`}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.02] text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"
+                    title="Edit Campaign"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Edit className="w-5 h-5" />
+                  </Link>
+                  <button
+                    onClick={(e) => handleDuplicateCampaign(e, campaign.id)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.02] text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"
+                    title="Duplicate Campaign"
+                  >
+                    <Copy className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteCampaign(e, campaign.id, campaign.name)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-red-400/20 bg-red-400/10 text-red-200 hover:bg-red-400/15 transition-colors"
+                    title="Delete Campaign"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {campaigns.length > 0 && (
+        <div className="card-premium p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Campaign Performance</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Mail className="w-5 h-5 text-white/60" />
+                <span className="text-white/55">Email Campaigns</span>
+              </div>
+              <p className="text-2xl font-semibold text-white">{campaigns.filter((c) => c.type === 'email').length}</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <MessageSquare className="w-5 h-5 text-white/60" />
+                <span className="text-white/55">SMS Campaigns</span>
+              </div>
+              <p className="text-2xl font-semibold text-white">{campaigns.filter((c) => c.type === 'sms').length}</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Users className="w-5 h-5 text-white/60" />
+                <span className="text-white/55">Total Recipients</span>
+              </div>
+              <p className="text-2xl font-semibold text-white">
+                {campaigns.reduce((sum, c) => sum + c.recipient_count, 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Send className="w-5 h-5 text-white/60" />
+                <span className="text-white/55">Total Delivered</span>
+              </div>
+              <p className="text-2xl font-semibold text-white">
+                {campaigns.reduce((sum, c) => sum + c.delivered_count, 0).toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

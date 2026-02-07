@@ -229,39 +229,27 @@ export default function ContactsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-premium mb-2">Contacts</h1>
-            <p className="text-gray-400">Manage your customer contacts and segments</p>
-          </div>
-          <div className="flex items-center space-x-4 mt-4 sm:mt-0">
-            <button 
-              className="btn-ghost"
-              onClick={() => setShowImportModal(true)}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Import
-            </button>
-            <button 
-              className="btn-ghost"
-              onClick={handleExport}
-              disabled={exporting}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {exporting ? 'Exporting...' : 'Export'}
-            </button>
-            <button 
-              className="btn-primary"
-              onClick={() => setShowAddModal(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Contact
-            </button>
-          </div>
+    <div className="space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold text-premium mb-2">Contacts</h1>
+          <p className="text-white/60">Manage your customer contacts and segments.</p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button className="btn-ghost" onClick={() => setShowImportModal(true)}>
+            <Upload className="w-4 h-4" />
+            Import
+          </button>
+          <button className="btn-ghost" onClick={handleExport} disabled={exporting}>
+            <Download className="w-4 h-4" />
+            {exporting ? 'Exporting...' : 'Export'}
+          </button>
+          <button className="btn-primary" onClick={() => setShowAddModal(true)}>
+            <Plus className="w-4 h-4" />
+            Add Contact
+          </button>
+        </div>
+      </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar - Segments */}
@@ -273,10 +261,10 @@ export default function ContactsPage() {
                   <button
                     key={segment.name}
                     onClick={() => setSelectedSegment(segment.name)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                    className={`w-full text-left px-3 py-2 rounded-xl border transition-colors ${
                       selectedSegment === segment.name
-                        ? 'bg-white text-black'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                        ? 'bg-white/[0.06] border-white/10 text-white'
+                        : 'border-transparent text-white/70 hover:text-white hover:bg-white/[0.04] hover:border-white/10'
                     }`}
                   >
                     <div className="flex justify-between items-center">
@@ -293,23 +281,23 @@ export default function ContactsPage() {
               <h3 className="text-lg font-semibold text-white mb-4">Quick Stats</h3>
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Total Contacts</span>
+                  <span className="text-white/55">Total Contacts</span>
                   <span className="text-white font-medium">{contacts.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Email Subscribers</span>
+                  <span className="text-white/55">Email Subscribers</span>
                   <span className="text-white font-medium">
                     {contacts.filter(c => c.email_consent).length}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">SMS Subscribers</span>
+                  <span className="text-white/55">SMS Subscribers</span>
                   <span className="text-white font-medium">
                     {contacts.filter(c => c.sms_consent).length}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Avg. Order Value</span>
+                  <span className="text-white/55">Avg. Order Value</span>
                   <span className="text-white font-medium">
                     ${contacts.length > 0 ? (contacts.reduce((sum, c) => sum + (c.total_spent || 0), 0) / contacts.filter(c => c.order_count > 0).length || 0).toFixed(0) : '0'}
                   </span>
@@ -325,7 +313,7 @@ export default function ContactsPage() {
               <div className="card-premium p-6 mb-6">
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-                  <p className="text-gray-400">Loading contacts...</p>
+                  <p className="text-white/60">Loading contacts...</p>
                 </div>
               </div>
             )}
@@ -351,7 +339,7 @@ export default function ContactsPage() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex-1">
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/45 w-4 h-4" />
                       <input
                         type="text"
                         placeholder="Search contacts..."
@@ -363,7 +351,7 @@ export default function ContactsPage() {
                   </div>
                   <div className="flex gap-4">
                     <button className="btn-ghost">
-                      <Filter className="w-4 h-4 mr-2" />
+                      <Filter className="w-4 h-4" />
                       Filters
                     </button>
                   </div>
@@ -371,26 +359,26 @@ export default function ContactsPage() {
 
                 {/* Bulk Actions */}
                 {selectedContacts.length > 0 && (
-                  <div className="mt-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
+                  <div className="mt-4 p-4 rounded-2xl border border-white/10 bg-white/[0.02]">
                     <div className="flex items-center justify-between">
                       <span className="text-white">
                         {selectedContacts.length} contact{selectedContacts.length > 1 ? 's' : ''} selected
                       </span>
                       <div className="flex items-center space-x-2">
                         <button className="btn-ghost text-sm">
-                          <Tag className="w-4 h-4 mr-1" />
+                          <Tag className="w-4 h-4" />
                           Add Tags
                         </button>
                         <button className="btn-ghost text-sm">
-                          <Mail className="w-4 h-4 mr-1" />
+                          <Mail className="w-4 h-4" />
                           Send Email
                         </button>
                         <button className="btn-ghost text-sm">
-                          <MessageSquare className="w-4 h-4 mr-1" />
+                          <MessageSquare className="w-4 h-4" />
                           Send SMS
                         </button>
                         <button className="btn-ghost text-sm text-red-400">
-                          <Trash2 className="w-4 h-4 mr-1" />
+                          <Trash2 className="w-4 h-4" />
                           Delete
                         </button>
                       </div>
@@ -406,33 +394,33 @@ export default function ContactsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-gray-800">
+                      <tr className="border-b border-white/10">
                         <th className="text-left py-4 px-4">
                           <input
                             type="checkbox"
                             checked={selectedContacts.length === filteredContacts.length && filteredContacts.length > 0}
                             onChange={handleSelectAll}
-                            className="rounded border-gray-600 bg-gray-700 text-white focus:ring-white"
+                            className="rounded border-white/20 bg-white/10 text-white focus:ring-white"
                           />
                         </th>
-                        <th className="text-left py-4 px-4 text-sm font-medium text-gray-400">Contact</th>
-                        <th className="text-left py-4 px-4 text-sm font-medium text-gray-400">Tags</th>
-                        <th className="text-left py-4 px-4 text-sm font-medium text-gray-400">Consent</th>
-                        <th className="text-left py-4 px-4 text-sm font-medium text-gray-400">Orders</th>
-                        <th className="text-left py-4 px-4 text-sm font-medium text-gray-400">Total Spent</th>
-                        <th className="text-left py-4 px-4 text-sm font-medium text-gray-400">Last Order</th>
-                        <th className="text-left py-4 px-4 text-sm font-medium text-gray-400">Actions</th>
+                        <th className="text-left py-4 px-4 text-sm font-medium text-white/55">Contact</th>
+                        <th className="text-left py-4 px-4 text-sm font-medium text-white/55">Tags</th>
+                        <th className="text-left py-4 px-4 text-sm font-medium text-white/55">Consent</th>
+                        <th className="text-left py-4 px-4 text-sm font-medium text-white/55">Orders</th>
+                        <th className="text-left py-4 px-4 text-sm font-medium text-white/55">Total Spent</th>
+                        <th className="text-left py-4 px-4 text-sm font-medium text-white/55">Last Order</th>
+                        <th className="text-left py-4 px-4 text-sm font-medium text-white/55">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredContacts.map((contact) => (
-                        <tr key={contact.id} className="border-b border-gray-800 hover:bg-gray-800/50">
+                        <tr key={contact.id} className="border-b border-white/10 hover:bg-white/[0.03]">
                           <td className="py-4 px-4">
                             <input
                               type="checkbox"
                               checked={selectedContacts.includes(contact.id)}
                               onChange={() => handleSelectContact(contact.id)}
-                              className="rounded border-gray-600 bg-gray-700 text-white focus:ring-white"
+                              className="rounded border-white/20 bg-white/10 text-white focus:ring-white"
                             />
                           </td>
                           <td className="py-4 px-4">
@@ -440,9 +428,9 @@ export default function ContactsPage() {
                               <div className="font-medium text-white">
                                 {contact.first_name} {contact.last_name}
                               </div>
-                              <div className="text-sm text-gray-400">{contact.email}</div>
+                              <div className="text-sm text-white/55">{contact.email}</div>
                               {contact.phone && (
-                                <div className="text-sm text-gray-400">{contact.phone}</div>
+                                <div className="text-sm text-white/55">{contact.phone}</div>
                               )}
                             </div>
                           </td>
@@ -451,7 +439,7 @@ export default function ContactsPage() {
                               {contact.tags.map((tag) => (
                                 <span
                                   key={tag}
-                                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                  className="badge badge-muted"
                                 >
                                   {tag}
                                 </span>
@@ -460,25 +448,33 @@ export default function ContactsPage() {
                           </td>
                           <td className="py-4 px-4">
                             <div className="flex items-center space-x-2">
-                              <div className={`w-2 h-2 rounded-full ${contact.email_consent ? 'bg-green-400' : 'bg-gray-600'}`} />
-                              <Mail className="w-4 h-4 text-gray-400" />
-                              <div className={`w-2 h-2 rounded-full ${contact.sms_consent ? 'bg-green-400' : 'bg-gray-600'}`} />
-                              <MessageSquare className="w-4 h-4 text-gray-400" />
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  contact.email_consent ? 'bg-[color:var(--accent-hi)]' : 'bg-white/25'
+                                }`}
+                              />
+                              <Mail className="w-4 h-4 text-white/45" />
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  contact.sms_consent ? 'bg-[color:var(--accent-hi)]' : 'bg-white/25'
+                                }`}
+                              />
+                              <MessageSquare className="w-4 h-4 text-white/45" />
                             </div>
                           </td>
                           <td className="py-4 px-4 text-white">{contact.order_count}</td>
                           <td className="py-4 px-4 text-white font-medium">
                             ${(contact.total_spent || 0).toFixed(2)}
                           </td>
-                          <td className="py-4 px-4 text-gray-400">
+                          <td className="py-4 px-4 text-white/55">
                             {contact.last_order_at ? new Date(contact.last_order_at).toLocaleDateString() : '-'}
                           </td>
                           <td className="py-4 px-4">
                             <div className="flex items-center space-x-2">
-                              <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+                              <button className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.02] text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors">
                                 <Edit className="w-4 h-4" />
                               </button>
-                              <button className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors">
+                              <button className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/10 text-red-200 hover:bg-red-400/15 transition-colors">
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
@@ -491,9 +487,9 @@ export default function ContactsPage() {
 
                 {filteredContacts.length === 0 && !loading && (
                   <div className="text-center py-12">
-                    <Users className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                    <Users className="w-12 h-12 text-white/35 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-white mb-2">No contacts found</h3>
-                    <p className="text-gray-400 mb-6">
+                    <p className="text-white/60 mb-6">
                       {searchTerm || selectedSegment !== 'All Contacts'
                         ? 'Try adjusting your search or segment filter'
                         : 'Get started by adding your first contact'
@@ -505,14 +501,14 @@ export default function ContactsPage() {
                           className="btn-primary"
                           onClick={() => setShowAddModal(true)}
                         >
-                          <Plus className="w-4 h-4 mr-2" />
+                          <Plus className="w-4 h-4" />
                           Add Contact
                         </button>
                         <button 
                           className="btn-secondary"
                           onClick={() => setShowImportModal(true)}
                         >
-                          <Upload className="w-4 h-4 mr-2" />
+                          <Upload className="w-4 h-4" />
                           Import Contacts
                         </button>
                       </div>
@@ -523,18 +519,17 @@ export default function ContactsPage() {
             )}
           </div>
         </div>
-      </div>
 
       {/* Add Contact Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="card-premium p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-semibold text-white mb-4">Add New Contact</h3>
             
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <label className="block text-sm font-medium text-white/55 mb-2">
                     First Name
                   </label>
                   <input
@@ -546,7 +541,7 @@ export default function ContactsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <label className="block text-sm font-medium text-white/55 mb-2">
                     Last Name
                   </label>
                   <input
@@ -560,7 +555,7 @@ export default function ContactsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
+                <label className="block text-sm font-medium text-white/55 mb-2">
                   Email Address *
                 </label>
                 <input
@@ -574,7 +569,7 @@ export default function ContactsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
+                <label className="block text-sm font-medium text-white/55 mb-2">
                   Phone Number
                 </label>
                 <input
@@ -592,9 +587,9 @@ export default function ContactsPage() {
                     type="checkbox"
                     checked={newContact.email_consent}
                     onChange={(e) => setNewContact({...newContact, email_consent: e.target.checked})}
-                    className="rounded border-gray-600 bg-gray-700 text-white focus:ring-white mr-2"
+                    className="rounded border-white/20 bg-white/10 text-white focus:ring-white mr-2"
                   />
-                  <span className="text-sm text-gray-300">Email marketing consent</span>
+                  <span className="text-sm text-white/70">Email marketing consent</span>
                 </label>
                 
                 <label className="flex items-center">
@@ -602,9 +597,9 @@ export default function ContactsPage() {
                     type="checkbox"
                     checked={newContact.sms_consent}
                     onChange={(e) => setNewContact({...newContact, sms_consent: e.target.checked})}
-                    className="rounded border-gray-600 bg-gray-700 text-white focus:ring-white mr-2"
+                    className="rounded border-white/20 bg-white/10 text-white focus:ring-white mr-2"
                   />
-                  <span className="text-sm text-gray-300">SMS marketing consent</span>
+                  <span className="text-sm text-white/70">SMS marketing consent</span>
                 </label>
               </div>
             </div>
@@ -630,13 +625,13 @@ export default function ContactsPage() {
 
       {/* Import Contacts Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="card-premium p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-semibold text-white mb-4">Import Contacts</h3>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
+                <label className="block text-sm font-medium text-white/55 mb-2">
                   Upload CSV File
                 </label>
                 <input
@@ -650,14 +645,14 @@ export default function ContactsPage() {
                   }}
                   className="input-premium w-full"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-white/45 mt-1">
                   CSV should include columns: first_name, last_name, email, phone
                 </p>
               </div>
               
-              <div className="bg-gray-800 p-4 rounded-lg">
+              <div className="border border-white/10 bg-white/[0.02] p-4 rounded-2xl">
                 <h4 className="text-sm font-medium text-white mb-2">CSV Format Example:</h4>
-                <pre className="text-xs text-gray-400">
+                <pre className="text-xs text-white/55">
 {`first_name,last_name,email,phone
 John,Doe,john@example.com,+1234567890
 Jane,Smith,jane@example.com,+1987654321`}

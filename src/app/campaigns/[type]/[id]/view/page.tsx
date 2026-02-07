@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Mail, MessageSquare, Users, Eye, MousePointer, DollarSign, Calendar } from 'lucide-react'
+import { ArrowLeft, Mail, MessageSquare, Users, Eye, MousePointer, DollarSign } from 'lucide-react'
 
 interface Campaign {
   id: string
@@ -71,67 +71,73 @@ export default function ViewCampaignPage() {
     return ((numerator / denominator) * 100).toFixed(1)
   }
 
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'sent':
+      case 'active':
+        return 'badge badge-success'
+      case 'scheduled':
+      case 'sending':
+        return 'badge badge-warning'
+      case 'draft':
+        return 'badge badge-muted'
+      default:
+        return 'badge badge-muted'
+    }
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center py-24">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--accent-hi)]" />
       </div>
     )
   }
 
   if (error || !campaign) {
     return (
-      <div className="min-h-screen bg-black text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-4">Campaign Not Found</h1>
-            <p className="text-gray-400 mb-8">{error}</p>
-            <Link href="/campaigns" className="btn-primary">
-              Back to Campaigns
-            </Link>
-          </div>
+      <div className="flex items-center justify-center py-24">
+        <div className="card-premium w-full max-w-md p-10 text-center">
+          <h1 className="text-2xl font-semibold text-white mb-4">Campaign Not Found</h1>
+          <p className="text-white/60 mb-8">{error}</p>
+          <Link href="/campaigns" className="btn-primary">
+            Back to Campaigns
+          </Link>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link href="/campaigns" className="inline-flex items-center text-gray-400 hover:text-white mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Campaigns
-          </Link>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-gradient-accent rounded-lg flex items-center justify-center mr-4">
-                {campaignType === 'email' ? (
-                  <Mail className="w-6 h-6 text-white" />
-                ) : (
-                  <MessageSquare className="w-6 h-6 text-white" />
-                )}
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white">{campaign.name}</h1>
-                <p className="text-gray-400">
-                  {campaignType === 'email' ? 'Email Campaign' : 'SMS Campaign'} • 
-                  <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-                    campaign.status === 'sent' ? 'bg-green-100 text-green-800' :
-                    campaign.status === 'draft' ? 'bg-gray-100 text-gray-800' :
-                    campaign.status === 'scheduled' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-blue-100 text-blue-800'
-                  }`}>
-                    {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
-                  </span>
-                </p>
+    <div className="max-w-6xl mx-auto space-y-8">
+      <div className="flex items-center gap-4">
+        <Link
+          href="/campaigns"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.02] text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"
+          aria-label="Back to campaigns"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-3">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(4,31,26,0.95),rgba(10,83,70,0.92))] text-white shrink-0">
+              {campaignType === 'email' ? <Mail className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+            </div>
+            <div className="min-w-0">
+              <h1 className="truncate text-3xl font-semibold text-white">{campaign.name}</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="badge badge-muted">{campaignType === 'email' ? 'EMAIL CAMPAIGN' : 'SMS CAMPAIGN'}</span>
+                <span className={getStatusBadgeClass(campaign.status)}>
+                  {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
+                </span>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Campaign Content */}
@@ -141,20 +147,20 @@ export default function ViewCampaignPage() {
               {campaignType === 'email' ? (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Subject Line</label>
+                    <label className="block text-sm font-medium text-white/55 mb-1">Subject Line</label>
                     <p className="text-white">{campaign.subject || 'No subject'}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">From</label>
+                    <label className="block text-sm font-medium text-white/55 mb-1">From</label>
                     <p className="text-white">{campaign.from_name} &lt;{campaign.from_email}&gt;</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Email Content</label>
-                    <div className="bg-gray-800 rounded-lg p-4 max-h-96 overflow-y-auto">
+                    <label className="block text-sm font-medium text-white/55 mb-2">Email Content</label>
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 max-h-96 overflow-y-auto scrollbar-premium">
                       {campaign.html_content ? (
                         <div dangerouslySetInnerHTML={{ __html: campaign.html_content }} />
                       ) : (
-                        <p className="text-gray-400">No content available</p>
+                        <p className="text-white/60">No content available</p>
                       )}
                     </div>
                   </div>
@@ -162,12 +168,12 @@ export default function ViewCampaignPage() {
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">From Number</label>
+                    <label className="block text-sm font-medium text-white/55 mb-1">From Number</label>
                     <p className="text-white">{campaign.from_number}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Message</label>
-                    <div className="bg-gray-800 rounded-lg p-4">
+                    <label className="block text-sm font-medium text-white/55 mb-2">Message</label>
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
                       <p className="text-white whitespace-pre-wrap">{campaign.message}</p>
                     </div>
                   </div>
@@ -180,40 +186,40 @@ export default function ViewCampaignPage() {
               <div className="card-premium p-6">
                 <h2 className="text-xl font-semibold text-white mb-4">Performance Metrics</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-gray-800 rounded-lg">
-                    <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                  <div className="text-center p-4 rounded-2xl border border-white/10 bg-white/[0.02]">
+                    <Users className="w-8 h-8 text-white/70 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-white">{campaign.delivered_count.toLocaleString()}</div>
-                    <div className="text-sm text-gray-400">Delivered</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-sm text-white/55">Delivered</div>
+                    <div className="text-xs text-white/45">
                       {calculateRate(campaign.delivered_count, campaign.recipient_count)}%
                     </div>
                   </div>
                   
                   {campaignType === 'email' && (
-                    <div className="text-center p-4 bg-gray-800 rounded-lg">
-                      <Eye className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                    <div className="text-center p-4 rounded-2xl border border-white/10 bg-white/[0.02]">
+                      <Eye className="w-8 h-8 text-white/70 mx-auto mb-2" />
                       <div className="text-2xl font-bold text-white">{campaign.opened_count.toLocaleString()}</div>
-                      <div className="text-sm text-gray-400">Opened</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-sm text-white/55">Opened</div>
+                      <div className="text-xs text-white/45">
                         {calculateRate(campaign.opened_count, campaign.delivered_count)}%
                       </div>
                     </div>
                   )}
                   
-                  <div className="text-center p-4 bg-gray-800 rounded-lg">
-                    <MousePointer className="w-8 h-8 text-purple-400 mx-auto mb-2" />
+                  <div className="text-center p-4 rounded-2xl border border-white/10 bg-white/[0.02]">
+                    <MousePointer className="w-8 h-8 text-white/70 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-white">{campaign.clicked_count.toLocaleString()}</div>
-                    <div className="text-sm text-gray-400">Clicked</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-sm text-white/55">Clicked</div>
+                    <div className="text-xs text-white/45">
                       {calculateRate(campaign.clicked_count, campaign.delivered_count)}%
                     </div>
                   </div>
                   
-                  <div className="text-center p-4 bg-gray-800 rounded-lg">
-                    <DollarSign className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
+                  <div className="text-center p-4 rounded-2xl border border-white/10 bg-white/[0.02]">
+                    <DollarSign className="w-8 h-8 text-white/70 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-white">$0</div>
-                    <div className="text-sm text-gray-400">Revenue</div>
-                    <div className="text-xs text-gray-500">$0.00 per recipient</div>
+                    <div className="text-sm text-white/55">Revenue</div>
+                    <div className="text-xs text-white/45">$0.00 per recipient</div>
                   </div>
                 </div>
               </div>
@@ -227,21 +233,21 @@ export default function ViewCampaignPage() {
               <h3 className="text-lg font-semibold text-white mb-4">Campaign Details</h3>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400">Created</label>
+                  <label className="block text-sm font-medium text-white/55">Created</label>
                   <p className="text-white text-sm">{formatDate(campaign.created_at)}</p>
                 </div>
                 {campaign.sent_at && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-400">Sent</label>
+                    <label className="block text-sm font-medium text-white/55">Sent</label>
                     <p className="text-white text-sm">{formatDate(campaign.sent_at)}</p>
                   </div>
                 )}
                 <div>
-                  <label className="block text-sm font-medium text-gray-400">Recipients</label>
+                  <label className="block text-sm font-medium text-white/55">Recipients</label>
                   <p className="text-white text-sm">{campaign.recipient_count.toLocaleString()}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-400">Status</label>
+                  <label className="block text-sm font-medium text-white/55">Status</label>
                   <p className="text-white text-sm capitalize">{campaign.status}</p>
                 </div>
               </div>
@@ -309,7 +315,6 @@ export default function ViewCampaignPage() {
             </div>
           </div>
         </div>
-      </div>
     </div>
   )
 }
