@@ -207,12 +207,57 @@ body {
   }
 }
 
+@keyframes floatSoft {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -14px, 0); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.55; filter: blur(0px); }
+  50% { opacity: 0.9; filter: blur(0.6px); }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out;
 }
 
 .animate-slide-up {
   animation: slideUp 0.5s ease-out;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-float-slow {
+    animation: floatSoft 9s ease-in-out infinite;
+  }
+
+  .animate-float-slower {
+    animation: floatSoft 12s ease-in-out infinite;
+  }
+
+  .animate-glow-pulse {
+    animation: glowPulse 6s ease-in-out infinite;
+  }
+
+  .animate-gradient-shift {
+    animation: gradientShift 10s ease-in-out infinite;
+    background-size: 200% 200%;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2.2s linear infinite;
+    background-size: 200% 100%;
+  }
 }
 
 /* Loading spinner */

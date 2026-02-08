@@ -1,423 +1,529 @@
-"use client";
+'use client'
 
-import Link from "next/link";
+import { useState, type CSSProperties } from 'react'
+import Link from 'next/link'
 import {
   ArrowRight,
   BarChart3,
-  Mail,
-  MessageSquare,
-  Zap,
-  Shield,
-  Globe,
-  Users,
-  TrendingUp,
   CheckCircle,
-  Star,
+  Globe,
+  Mail,
   Menu,
+  MessageSquare,
+  Shield,
+  ShoppingBag,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Users,
   X,
-} from "lucide-react";
-import { useState } from "react";
-// vercel tax
+  Zap,
+} from 'lucide-react'
+
+type SpotlightStyle = CSSProperties & {
+  '--mx'?: string
+  '--my'?: string
+}
+
+const stats = [
+  { label: 'Store connections', value: '10,000+' },
+  { label: 'Messages delivered', value: '50M+' },
+  { label: 'Avg. ROI uplift', value: '4.0×' },
+  { label: 'Platform uptime', value: '99.9%' },
+]
+
 const features = [
   {
     icon: Mail,
-    title: "Email Marketing",
-    description:
-      "Create stunning email campaigns with our drag-and-drop editor. Custom domain support for better deliverability.",
+    title: 'Email that lands',
+    description: 'Craft stunning campaigns with a drag-and-drop editor, domain support, and deliverability-first defaults.',
   },
   {
     icon: MessageSquare,
-    title: "SMS Marketing",
-    description:
-      "Reach customers instantly with SMS campaigns. Cost-effective rates starting at $0.002 per message.",
+    title: 'SMS that converts',
+    description: 'High-signal messaging with compliance baked in, smart segmentation, and scalable sending.',
   },
   {
     icon: Zap,
-    title: "Marketing Automation",
-    description:
-      "Set up automated workflows triggered by customer behavior. Increase sales with targeted sequences.",
+    title: 'Automation, simplified',
+    description: 'Behavior-triggered workflows that feel effortless—welcome series, win-backs, abandonments, and more.',
   },
   {
     icon: BarChart3,
-    title: "Advanced Analytics",
-    description:
-      "Track performance with detailed analytics. Revenue attribution and ROI tracking included.",
+    title: 'Analytics you trust',
+    description: 'Know what drives revenue with clear attribution, funnel insights, and exportable reporting.',
   },
   {
     icon: Shield,
-    title: "GDPR Compliant",
-    description:
-      "Built-in compliance features for GDPR, CAN-SPAM, and other regulations. Automatic consent management.",
+    title: 'Compliance by design',
+    description: 'Consent, suppression, and policy-ready tooling for GDPR and messaging standards—without slowing you down.',
   },
   {
     icon: Globe,
-    title: "Shopify Integration",
-    description:
-      "Seamless integration with Shopify stores. Access customer data, orders, and cart information.",
+    title: 'Shopify-native',
+    description: 'Deep Shopify integration for customer data, orders, and events—ready for segmentation and automation.',
   },
-];
-
-const stats = [
-  { label: "Active Stores", value: "10,000+" },
-  { label: "Emails Sent", value: "50M+" },
-  { label: "Average ROI", value: "400%" },
-  { label: "Uptime", value: "99.9%" },
-];
+]
 
 const testimonials = [
   {
-    name: "Sarah Johnson",
-    role: "E-commerce Manager",
-    company: "Fashion Forward",
-    content:
-      "This platform increased our email revenue by 300% in just 3 months. The automation features are incredible.",
+    name: 'Sarah Johnson',
+    role: 'E-commerce Manager',
+    company: 'Fashion Forward',
+    content: 'Email revenue jumped 3× in 90 days. The automations are the first ones that actually feel “set and forget.”',
     rating: 5,
   },
   {
-    name: "Mike Chen",
-    role: "Marketing Director",
-    company: "Tech Gadgets Pro",
-    content:
-      "The SMS marketing feature helped us recover 40% of abandoned carts. ROI is through the roof.",
+    name: 'Mike Chen',
+    role: 'Marketing Director',
+    company: 'Tech Gadgets Pro',
+    content: 'Abandoned cart SMS became a top revenue channel. The segmentation and timing tools are unreal.',
     rating: 5,
   },
   {
-    name: "Emily Rodriguez",
-    role: "Store Owner",
-    company: "Organic Beauty Co",
-    content:
-      "Setup was incredibly easy. We were sending campaigns within 5 minutes of connecting our Shopify store.",
+    name: 'Emily Rodriguez',
+    role: 'Founder',
+    company: 'Organic Beauty Co',
+    content: 'We connected Shopify and shipped our first campaign in minutes. Everything looks premium out of the box.',
     rating: 5,
   },
-];
+]
 
 export default function HomePage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const spotlightStyle: SpotlightStyle = { '--mx': '50%', '--my': '35%' }
+
+  const handleSpotlightMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    event.currentTarget.style.setProperty('--mx', `${event.clientX - rect.left}px`)
+    event.currentTarget.style.setProperty('--my', `${event.clientY - rect.top}px`)
+  }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="text-2xl font-bold text-black">
-                Marketing Platform Pro
-              </Link>
-            </div>
+    <div className="relative">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/25 backdrop-blur-xl">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
+            <Link href="/" className="flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.04]">
+                <ShoppingBag className="h-5 w-5 text-white" />
+              </div>
+              <div className="leading-tight">
+                <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                  MarketingPro
+                  <span className="h-2 w-2 rounded-full bg-[color:var(--accent-hi)] shadow-[0_0_0_4px_rgba(4,31,26,0.18)] animate-glow-pulse" />
+                </div>
+                <div className="text-xs text-white/55">Premium marketing for Shopify</div>
+              </div>
+            </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <Link
-                href="/auth/login"
-                className="text-gray-600 hover:text-black transition-colors"
-              >
-                Sign In
+            <nav className="hidden md:flex items-center gap-6 text-sm">
+              <Link href="#features" className="text-white/70 hover:text-white transition-colors">
+                Features
               </Link>
-              <Link
-                href="/auth/register"
-                className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors"
-              >
-                Get Started
+              <Link href="#proof" className="text-white/70 hover:text-white transition-colors">
+                Proof
               </Link>
-            </div>
+              <Link href="#stories" className="text-white/70 hover:text-white transition-colors">
+                Stories
+              </Link>
+              <Link href="/auth/login" className="btn-ghost px-3 py-2">
+                Sign in
+              </Link>
+              <Link href="/auth/register" className="btn-primary">
+                Start free
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </nav>
 
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-gray-600 hover:text-black"
-              >
-                {mobileMenuOpen ? (
-                  <X className="w-6 h-6" />
-                ) : (
-                  <Menu className="w-6 h-6" />
-                )}
-              </button>
-            </div>
+            <button
+              onClick={() => setMobileMenuOpen((value) => !value)}
+              className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
 
-          {/* Mobile Navigation */}
           {mobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-200 py-4">
-              <div className="flex flex-col space-y-4">
-                <Link
-                  href="/auth/login"
-                  className="text-gray-600 hover:text-black transition-colors"
-                >
-                  Sign In
+            <div className="md:hidden pb-4">
+              <div className="mt-2 grid gap-2 rounded-3xl border border-white/10 bg-white/[0.03] p-3">
+                <Link href="#features" className="btn-ghost justify-start" onClick={() => setMobileMenuOpen(false)}>
+                  Features
                 </Link>
-                <Link
-                  href="/auth/register"
-                  className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors text-center"
-                >
-                  Get Started
+                <Link href="#proof" className="btn-ghost justify-start" onClick={() => setMobileMenuOpen(false)}>
+                  Proof
                 </Link>
+                <Link href="#stories" className="btn-ghost justify-start" onClick={() => setMobileMenuOpen(false)}>
+                  Stories
+                </Link>
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <Link href="/auth/login" className="btn-secondary" onClick={() => setMobileMenuOpen(false)}>
+                    Sign in
+                  </Link>
+                  <Link href="/auth/register" className="btn-primary" onClick={() => setMobileMenuOpen(false)}>
+                    Start free
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
               </div>
             </div>
           )}
         </div>
-      </nav>
+      </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 sm:py-32">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-black mb-8">
-              Premium Email & SMS
-              <br />
-              <span className="text-blue-600">Marketing Platform</span>
-            </h1>
-            <p className="text-xl sm:text-2xl text-gray-600 max-w-3xl mx-auto mb-12">
-              Boost your Shopify store revenue with professional email and SMS
-              marketing. Advanced automation, analytics, and compliance features
-              included.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/auth/register"
-                className="bg-black text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-gray-800 transition-colors inline-flex items-center justify-center"
+      <section className="relative overflow-hidden">
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-32 left-[-80px] h-[520px] w-[520px] rounded-full bg-[rgba(4,31,26,0.55)] blur-3xl animate-float-slower" />
+          <div className="absolute top-20 right-[-100px] h-[520px] w-[520px] rounded-full bg-[rgba(255,255,255,0.10)] blur-3xl animate-float-slow" />
+          <div className="absolute bottom-[-220px] left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[rgba(4,31,26,0.35)] blur-3xl animate-glow-pulse" />
+        </div>
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24">
+          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+            <div className="space-y-8 animate-slide-up">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-medium text-white/75">
+                <Sparkles className="h-4 w-4 text-[color:var(--accent-hi)]" />
+                Built for modern Shopify operators
+              </div>
+
+              <div className="space-y-4">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-premium">
+                  Premium email & SMS that feels like a command center.
+                </h1>
+                <p className="text-lg text-white/65 leading-relaxed max-w-xl">
+                  Launch campaigns, automate lifecycle flows, and measure revenue impact with a dashboard that’s designed to be
+                  fast, calm, and relentlessly effective.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/auth/register" className="btn-primary">
+                  Start free
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link href="/auth/login" className="btn-secondary">
+                  Sign in
+                </Link>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4 text-sm text-white/65">
+                <div className="inline-flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-300" />
+                  No credit card required
+                </div>
+                <div className="inline-flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-300" />
+                  Shopify connect in minutes
+                </div>
+                <div className="inline-flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-300" />
+                  Compliance-first defaults
+                </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute -inset-6 rounded-[2.25rem] bg-[radial-gradient(600px_circle_at_20%_0%,rgba(4,31,26,0.65),transparent_55%)] blur-2xl opacity-70" />
+              <div
+                onMouseMove={handleSpotlightMove}
+                style={spotlightStyle}
+                className="group relative rounded-[2.25rem] p-[1px] bg-[linear-gradient(135deg,rgba(255,255,255,0.18),rgba(4,31,26,0.75),rgba(255,255,255,0.08))] animate-gradient-shift"
               >
-                Start Free Trial
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
-              <Link
-                href="#features"
-                className="border border-gray-300 text-black px-8 py-4 rounded-lg text-lg font-medium hover:bg-gray-50 transition-colors inline-flex items-center justify-center"
-              >
-                Learn More
-              </Link>
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 rounded-[2.25rem] opacity-0 transition-opacity duration-300 group-hover:opacity-100 [background:radial-gradient(700px_circle_at_var(--mx)_var(--my),rgba(4,31,26,0.55),transparent_60%)]"
+                />
+                <div className="relative rounded-[2.18rem] border border-white/10 bg-white/[0.03] p-6 shadow-3xl backdrop-blur-xl">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-xs text-white/55">Live workspace</div>
+                      <div className="truncate text-sm font-semibold text-white">Revenue, campaigns, automation</div>
+                    </div>
+                    <span className="badge badge-accent">Dashboard</span>
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'Deliverability', value: '98.4%' },
+                      { label: 'Recovered revenue', value: '$42.1k' },
+                      { label: 'New subscribers', value: '+1,284' },
+                      { label: 'Automation ROI', value: '5.2×' },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className="rounded-2xl border border-white/10 bg-black/25 p-4 transition-colors hover:bg-black/30"
+                      >
+                        <div className="text-xs text-white/55">{item.label}</div>
+                        <div className="mt-1 text-lg font-semibold text-white">{item.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4">
+                    <div className="flex items-center justify-between text-xs text-white/55">
+                      <span>Campaign performance</span>
+                      <span className="inline-flex items-center gap-1 text-emerald-200">
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        +18%
+                      </span>
+                    </div>
+                    <div className="mt-4 grid gap-2">
+                      <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                        <div className="h-full w-[68%] rounded-full bg-[linear-gradient(90deg,rgba(4,31,26,0.95),rgba(255,255,255,0.65),rgba(4,31,26,0.95))] animate-shimmer" />
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                        <div className="h-full w-[44%] rounded-full bg-[linear-gradient(90deg,rgba(4,31,26,0.85),rgba(255,255,255,0.50),rgba(4,31,26,0.85))] animate-shimmer" />
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                        <div className="h-full w-[78%] rounded-full bg-[linear-gradient(90deg,rgba(4,31,26,0.75),rgba(255,255,255,0.40),rgba(4,31,26,0.75))] animate-shimmer" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-white/55">
+                    <span className="badge badge-muted">Email</span>
+                    <span className="badge badge-muted">SMS</span>
+                    <span className="badge badge-muted">Automation</span>
+                    <span className="badge badge-muted">Analytics</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 border-y border-gray-200 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+      <section id="proof" className="py-14 border-y border-white/10 bg-black/10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-3xl sm:text-4xl font-bold text-black mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-gray-600 text-sm sm:text-base">
-                  {stat.label}
-                </div>
+              <div key={stat.label} className="card-premium p-5">
+                <div className="text-2xl sm:text-3xl font-semibold text-premium">{stat.value}</div>
+                <div className="mt-2 text-sm text-white/55">{stat.label}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
       <section id="features" className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-black mb-4">
-              Everything You Need to Grow
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Professional marketing tools designed specifically for e-commerce
-              businesses
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl">
+            <h2 className="text-3xl sm:text-4xl font-semibold text-premium">Everything you need to grow—without the noise.</h2>
+            <p className="mt-4 text-lg text-white/65">
+              Purpose-built tools for high-quality lifecycle marketing, designed to keep you in flow.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="bg-white border border-gray-200 rounded-lg p-8 hover:shadow-lg transition-shadow"
-              >
-                <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-6">
-                  <feature.icon className="w-6 h-6 text-white" />
+              <div key={feature.title} className="card-premium-hover p-6">
+                <div className="flex items-start gap-4">
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(4,31,26,0.95),rgba(10,83,70,0.92))] text-white shadow-[0_18px_50px_rgba(0,0,0,0.55)]">
+                    <feature.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">{feature.title}</h3>
+                    <p className="mt-2 text-sm text-white/60 leading-relaxed">{feature.description}</p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-black mb-4">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {feature.description}
-                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-12 grid gap-6 lg:grid-cols-3">
+            {[
+              { icon: Users, title: 'Segments that make sense', body: 'Build smarter audiences with consent-aware filters and real Shopify signals.' },
+              { icon: Zap, title: 'Automations with intent', body: 'Triggers and actions designed for lifecycle marketing—not generic “workflow builders”.' },
+              { icon: Shield, title: 'Built-in safeguards', body: 'Suppression, opt-out, and compliance defaults to keep sending reputation clean.' },
+            ].map((item) => (
+              <div key={item.title} className="card-premium p-6">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] text-white/80">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <div className="text-sm font-semibold text-white">{item.title}</div>
+                </div>
+                <p className="mt-3 text-sm text-white/60 leading-relaxed">{item.body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-black mb-4">
-              Trusted by Thousands
-            </h2>
-            <p className="text-xl text-gray-600">
-              See what our customers are saying
-            </p>
+      <section id="stories" className="py-20 border-t border-white/10 bg-black/10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between gap-6 flex-wrap">
+            <div className="max-w-3xl">
+              <h2 className="text-3xl sm:text-4xl font-semibold text-premium">Operators love the calm.</h2>
+              <p className="mt-4 text-lg text-white/65">Stories from teams who wanted premium UX without sacrificing power.</p>
+            </div>
+            <Link href="/auth/register" className="btn-secondary">
+              Start free
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
             {testimonials.map((testimonial) => (
-              <div
-                key={testimonial.name}
-                className="bg-white border border-gray-200 rounded-lg p-8"
-              >
-                <div className="flex items-center mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className="w-5 h-5 text-yellow-400 fill-current"
-                    />
+              <div key={testimonial.name} className="card-premium p-6">
+                <div className="flex items-center gap-1 text-amber-200">
+                  {Array.from({ length: testimonial.rating }).map((_, index) => (
+                    <Star key={index} className="h-4 w-4 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  "{testimonial.content}"
-                </p>
-                <div>
-                  <div className="font-semibold text-black">
-                    {testimonial.name}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {testimonial.role} at {testimonial.company}
+                <p className="mt-4 text-sm text-white/70 leading-relaxed">“{testimonial.content}”</p>
+                <div className="mt-6">
+                  <div className="text-sm font-semibold text-white">{testimonial.name}</div>
+                  <div className="text-xs text-white/55">
+                    {testimonial.role} • {testimonial.company}
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-black mb-6">
-            Ready to Boost Your Revenue?
-          </h2>
-          <p className="text-xl text-gray-600 mb-8">
-            Join thousands of successful e-commerce businesses using our
-            platform
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link
-              href="/auth/register"
-              className="bg-black text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-gray-800 transition-colors inline-flex items-center justify-center"
-            >
-              Start Your Free Trial
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Link>
-            <div className="text-sm text-gray-500 flex items-center justify-center">
-              <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
-              No credit card required
+          <div className="mt-12">
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[linear-gradient(135deg,rgba(4,31,26,0.35),rgba(255,255,255,0.04))] p-[1px]">
+              <div className="relative rounded-[1.75rem] bg-white/[0.03] px-6 py-10 sm:px-10 sm:py-12 backdrop-blur-xl">
+                <div aria-hidden className="pointer-events-none absolute inset-0 opacity-70 gradient-premium" />
+                <div className="relative grid gap-8 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
+                  <div>
+                    <h3 className="text-2xl sm:text-3xl font-semibold text-premium">Ready to ship a premium lifecycle engine?</h3>
+                    <p className="mt-3 text-white/65 max-w-2xl">
+                      Connect Shopify, import subscribers, and launch campaigns that look like they belong in 2026.
+                    </p>
+                    <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                      <Link href="/auth/register" className="btn-primary">
+                        Start free
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                      <Link href="/auth/login" className="btn-secondary">
+                        Sign in
+                      </Link>
+                    </div>
+                    <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-white/60">
+                      <div className="inline-flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-emerald-300" />
+                        No credit card
+                      </div>
+                      <div className="inline-flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-emerald-300" />
+                        Cancel anytime
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid gap-3">
+                    {[
+                      { label: 'Campaigns', value: 'Email + SMS' },
+                      { label: 'Automation', value: 'Triggers + actions' },
+                      { label: 'Analytics', value: 'Attribution-ready' },
+                    ].map((item) => (
+                      <div key={item.label} className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                        <div className="text-xs text-white/55">{item.label}</div>
+                        <div className="mt-1 text-sm font-semibold text-white">{item.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-black text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <footer className="border-t border-white/10 bg-black/20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid gap-10 md:grid-cols-4">
             <div>
-              <h3 className="text-lg font-semibold mb-4">
-                Marketing Platform Pro
-              </h3>
-              <p className="text-gray-400 text-sm">
-                Professional email and SMS marketing platform for Shopify
-                stores.
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.04]">
+                  <ShoppingBag className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">MarketingPro</div>
+                  <div className="text-xs text-white/55">Premium marketing platform</div>
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-white/55 leading-relaxed max-w-xs">
+                Email + SMS marketing for Shopify teams who care about craft, conversion, and calm UX.
               </p>
             </div>
+
             <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
+              <div className="text-sm font-semibold text-white">Product</div>
+              <ul className="mt-4 space-y-2 text-sm">
                 <li>
-                  <Link
-                    href="#features"
-                    className="hover:text-white transition-colors"
-                  >
+                  <Link href="#features" className="text-white/60 hover:text-white transition-colors">
                     Features
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="#pricing"
-                    className="hover:text-white transition-colors"
-                  >
-                    Pricing
+                  <Link href="/auth/register" className="text-white/60 hover:text-white transition-colors">
+                    Start free
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/auth/register"
-                    className="hover:text-white transition-colors"
-                  >
-                    Get Started
+                  <Link href="/auth/login" className="text-white/60 hover:text-white transition-colors">
+                    Sign in
                   </Link>
                 </li>
               </ul>
             </div>
+
             <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
+              <div className="text-sm font-semibold text-white">Support</div>
+              <ul className="mt-4 space-y-2 text-sm">
                 <li>
-                  <Link
-                    href="/help"
-                    className="hover:text-white transition-colors"
-                  >
+                  <Link href="/help" className="text-white/60 hover:text-white transition-colors">
                     Help Center
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/contact"
-                    className="hover:text-white transition-colors"
-                  >
-                    Contact Us
+                  <Link href="/contact" className="text-white/60 hover:text-white transition-colors">
+                    Contact
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/status"
-                    className="hover:text-white transition-colors"
-                  >
+                  <Link href="/status" className="text-white/60 hover:text-white transition-colors">
                     Status
                   </Link>
                 </li>
               </ul>
             </div>
+
             <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
+              <div className="text-sm font-semibold text-white">Legal</div>
+              <ul className="mt-4 space-y-2 text-sm">
                 <li>
-                  <Link
-                    href="/privacy"
-                    className="hover:text-white transition-colors"
-                  >
-                    Privacy Policy
+                  <Link href="/privacy" className="text-white/60 hover:text-white transition-colors">
+                    Privacy
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/terms"
-                    className="hover:text-white transition-colors"
-                  >
-                    Terms of Service
+                  <Link href="/terms" className="text-white/60 hover:text-white transition-colors">
+                    Terms
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/cookies"
-                    className="hover:text-white transition-colors"
-                  >
-                    Cookie Policy
+                  <Link href="/cookies" className="text-white/60 hover:text-white transition-colors">
+                    Cookies
                   </Link>
                 </li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2024 Marketing Platform Pro. All rights reserved.</p>
+
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-white/10 pt-6 text-sm text-white/45">
+            <div>© {new Date().getFullYear()} MarketingPro. All rights reserved.</div>
+            <div className="flex items-center gap-2">
+              <span className="badge badge-muted">Crafted UI</span>
+              <span className="badge badge-muted">Grid + glass</span>
+            </div>
           </div>
         </div>
       </footer>
     </div>
-  );
+  )
 }

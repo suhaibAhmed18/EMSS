@@ -1,223 +1,331 @@
-'use client'
+"use client";
 
-import { useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import {
+  ArrowRight,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  Mail,
+  Shield,
+  ShoppingBag,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 function LoginForm() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  
-  const message = searchParams.get('message')
-  const sessionCleared = searchParams.get('session_cleared')
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const message = searchParams.get("message");
+  const sessionCleared = searchParams.get("session_cleared");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
-        credentials: 'include' // Ensure cookies are included
-      })
+        credentials: "include", // Ensure cookies are included
+      });
 
       if (response.ok) {
-        const data = await response.json()
-        console.log('✅ Login successful:', data)
-        
+        const data = await response.json();
+        console.log("✅ Login successful:", data);
+
         // Small delay to ensure session is properly set
         setTimeout(() => {
-          router.push('/dashboard')
+          router.push("/dashboard");
           // Force a page reload to ensure navigation updates
-          window.location.href = '/dashboard'
-        }, 100)
+          window.location.href = "/dashboard";
+        }, 100);
       } else {
-        const data = await response.json()
-        setError(data.error || 'Login failed')
+        const data = await response.json();
+        setError(data.error || "Login failed");
       }
     } catch (err) {
-      console.error('Login error:', err)
-      setError('An error occurred. Please try again.')
+      console.error("Login error:", err);
+      setError("An error occurred. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-white mb-2">MarketingPro</h1>
-            <p className="text-gray-400 text-sm">Premium Email & SMS Marketing for Shopify</p>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Welcome back
-          </h2>
-          <p className="text-gray-400">
-            Sign in to your account to continue
-          </p>
-        </div>
+    <div className="relative min-h-screen overflow-hidden">
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-40 left-[-120px] h-[520px] w-[520px] rounded-full bg-[rgba(4,31,26,0.55)] blur-3xl animate-float-slower" />
+        <div className="absolute top-24 right-[-140px] h-[520px] w-[520px] rounded-full bg-[rgba(255,255,255,0.10)] blur-3xl animate-float-slow" />
+        <div className="absolute bottom-[-260px] left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[rgba(4,31,26,0.35)] blur-3xl animate-glow-pulse" />
+      </div>
 
-        {/* Success Message */}
-        {message && (
-          <div className="bg-green-900/20 border border-green-600/30 rounded-lg p-4">
-            <div className="flex items-center">
-              <CheckCircle className="w-5 h-5 text-green-400 mr-3" />
-              <p className="text-green-200 text-sm">{message}</p>
+      <header className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8">
+        <div className="flex items-center justify-between gap-3">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.04]">
+              <ShoppingBag className="h-5 w-5 text-white" />
+            </div>
+            <div className="leading-tight">
+              <div className="text-sm font-semibold text-white">
+                MarketingPro
+              </div>
+              <div className="text-xs text-white/55">
+                Premium email & SMS for Shopify
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/auth/register" className="btn-secondary">
+            Create account
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </header>
+
+      <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-16 pt-10">
+        <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+          <div className="hidden lg:block">
+            <div className="max-w-xl space-y-6">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-medium text-white/75">
+                <Sparkles className="h-4 w-4 text-[color:var(--accent-hi)]" />
+                Welcome Back
+              </div>
+              <h1 className="text-4xl font-semibold tracking-tight text-premium">
+                Sign in to your account
+              </h1>
+              <p className="text-white/65 leading-relaxed">
+                Sign in to launch campaigns, manage segments, and orchestrate
+                automation flows with premium controls and a grid-and-glass
+                aesthetic built for focus.
+              </p>
+
+              <div className="grid gap-3">
+                {[
+                  {
+                    icon: Zap,
+                    title: "Automations",
+                    body: "Lifecycle workflows with intent-driven triggers and actions.",
+                  },
+                  {
+                    icon: Shield,
+                    title: "Compliance-first",
+                    body: "Consent-aware sending with clean defaults and safeguards.",
+                  },
+                ].map((item) => (
+                  <div key={item.title} className="card-premium p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] text-white/80">
+                        <item.icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white">
+                          {item.title}
+                        </div>
+                        <div className="mt-1 text-sm text-white/60">
+                          {item.body}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Session Cleared Message */}
-        {sessionCleared && (
-          <div className="bg-blue-900/20 border border-blue-600/30 rounded-lg p-4">
-            <div className="flex items-center">
-              <AlertCircle className="w-5 h-5 text-blue-400 mr-3" />
-              <p className="text-blue-200 text-sm">
-                Your session has been cleared due to an account format update. Please log in again.
+          <div className="w-full max-w-md lg:justify-self-end">
+            <div className="space-y-4">
+              {message && (
+                <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-emerald-200 mt-0.5" />
+                    <p className="text-emerald-100 text-sm">{message}</p>
+                  </div>
+                </div>
+              )}
+
+              {sessionCleared && (
+                <div className="rounded-2xl border border-white/10 border-l-2 border-l-[color:var(--accent-hi)] bg-white/[0.02] p-4">
+                  <div className="flex items-start gap-3">
+                    <Sparkles className="h-5 w-5 text-[color:var(--accent-hi)] mt-0.5" />
+                    <p className="text-white/70 text-sm">
+                      Your session was cleared due to an account format update.
+                      Please sign in again.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="relative rounded-3xl p-[1px] bg-[linear-gradient(135deg,rgba(255,255,255,0.18),rgba(4,31,26,0.75),rgba(255,255,255,0.08))] animate-gradient-shift">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 shadow-3xl backdrop-blur-xl">
+                  <div className="mb-8">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-medium text-white/75">
+                      <span className="h-2 w-2 rounded-full bg-[color:var(--accent-hi)] shadow-[0_0_0_4px_rgba(4,31,26,0.18)] animate-glow-pulse" />
+                      Secure sign in
+                    </div>
+                    <h2 className="mt-4 text-2xl font-semibold text-white">
+                      Sign in
+                    </h2>
+                    <p className="mt-2 text-sm text-white/60">
+                      Enter your credentials to continue.
+                    </p>
+                  </div>
+
+                  <form className="space-y-5" onSubmit={handleSubmit}>
+                    <div className="space-y-4">
+                      <div>
+                        <label
+                          htmlFor="email"
+                          className="block text-sm font-medium text-white/70 mb-2"
+                        >
+                          Email address
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Mail className="h-5 w-5 text-white/35" />
+                          </div>
+                          <input
+                            id="email"
+                            name="email"
+                            type="email"
+                            autoComplete="email"
+                            required
+                            disabled={loading}
+                            className="input-premium w-full pl-10! disabled:opacity-60"
+                            placeholder="Enter your email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="password"
+                          className="block text-sm font-medium text-white/70 mb-2"
+                        >
+                          Password
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Lock className="h-5 w-5 text-white/35" />
+                          </div>
+                          <input
+                            id="password"
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            autoComplete="current-password"
+                            required
+                            disabled={loading}
+                            className="input-premium w-full pl-10! pr-10! disabled:opacity-60"
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/45 hover:text-white transition-colors"
+                            onClick={() => setShowPassword(!showPassword)}
+                            aria-label={
+                              showPassword ? "Hide password" : "Show password"
+                            }
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-5 w-5" />
+                            ) : (
+                              <Eye className="h-5 w-5" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {error && (
+                      <div
+                        className="rounded-2xl border border-red-400/20 bg-red-400/10 p-4"
+                        role="alert"
+                      >
+                        <p className="text-red-100 text-sm">{error}</p>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Sign in"
+                      )}
+                      {!loading && <ArrowRight className="h-4 w-4" />}
+                    </button>
+
+                    <div className="flex items-center justify-between">
+                      <Link
+                        href="/auth/forgot-password"
+                        className="text-sm text-white/60 hover:text-white transition-colors"
+                      >
+                        Forgot your password?
+                      </Link>
+                      <Link
+                        href="/auth/register"
+                        className="text-sm text-[color:var(--accent-hi)] hover:text-white transition-colors"
+                      >
+                        Create account
+                      </Link>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <p className="text-center text-sm text-white/55">
+                New here?{" "}
+                <Link
+                  href="/auth/register"
+                  className="text-[color:var(--accent-hi)] hover:text-white transition-colors"
+                >
+                  Start free
+                </Link>
               </p>
             </div>
           </div>
-        )}
-
-        {/* Login Form */}
-        <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-8">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                  Email address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-gray-500" />
-                  </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    className="appearance-none relative block w-full px-3 py-3 pl-10 bg-gray-800/50 border border-gray-700 placeholder-gray-500 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-500" />
-                  </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    required
-                    className="appearance-none relative block w-full px-3 py-3 pl-10 pr-10 bg-gray-800/50 border border-gray-700 placeholder-gray-500 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-500 hover:text-gray-400 transition-colors" />
-                    ) : (
-                      <Eye className="h-5 w-5 text-gray-500 hover:text-gray-400 transition-colors" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-red-900/20 border border-red-600/30 rounded-lg p-4">
-                <div className="flex items-center">
-                  <AlertCircle className="w-5 h-5 text-red-400 mr-3" />
-                  <p className="text-red-200 text-sm">{error}</p>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  'Sign in'
-                )}
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Link
-                href="/auth/forgot-password"
-                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-              >
-                Forgot your password?
-              </Link>
-            </div>
-          </form>
         </div>
-
-        {/* Sign up link */}
-        <div className="text-center">
-          <p className="text-gray-400">
-            Don't have an account?{' '}
-            <Link
-              href="/auth/register"
-              className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              Create one here
-            </Link>
-          </p>
-        </div>
-      </div>
+      </main>
     </div>
-  )
+  );
 }
-
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-white mx-auto" />
-          <p className="mt-4 text-gray-400">Loading...</p>
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-md py-20">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 w-56 rounded-xl bg-white/[0.06]" />
+            <div className="h-72 rounded-3xl border border-white/10 bg-white/[0.03]" />
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <LoginForm />
     </Suspense>
-  )
+  );
 }

@@ -21,8 +21,18 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     pathname === '/contact' ||
     pathname.startsWith('/contact/') ||
     pathname.startsWith('/status')
+
+  const isPremiumPublicPage = pathname === '/' || pathname.startsWith('/auth/')
   
   if (isPublicPage) {
+    if (isPremiumPublicPage) {
+      return (
+        <div className="app-background">
+          <div className="relative z-10 min-h-screen">{children}</div>
+        </div>
+      )
+    }
+
     return <div className="min-h-screen bg-white text-black">{children}</div>
   }
 
