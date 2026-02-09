@@ -1,0 +1,36 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+name = "Marketing Platform"
+client_id = "{{ SHOPIFY_CLIENT_ID }}"
+application_url = "{{ APP_URL }}"
+embedded = true
+
+[access_scopes]
+# Customer data access
+scopes = "read_customers,write_customers,read_orders,read_products,write_orders"
+
+[auth]
+redirect_urls = [
+  "{{ APP_URL }}/api/auth/shopify/callback",
+  "{{ APP_URL }}/shopify/auth/callback"
+]
+
+[webhooks]
+api_version = "2024-01"
+
+[[webhooks.subscriptions]]
+topics = [ "orders/create", "orders/paid", "orders/updated", "customers/create", "customers/update" ]
+uri = "{{ APP_URL }}/api/webhooks/shopify"
+
+[pos]
+embedded = false
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "{{ DEV_STORE_URL }}"
+include_config_on_deploy = true
+
+[app_proxy]
+url = "{{ APP_URL }}/shopify/proxy"
+subpath = "marketing"
+prefix = "apps"
