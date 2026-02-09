@@ -1,0 +1,6 @@
+email,first_name,last_name,phone,tags,email_consent,sms_consent,total_spent,order_count
+john.doe@example.com,John,Doe,+1234567890,vip;customer,yes,yes,150.00,3
+jane.smith@example.com,Jane,Smith,+1987654321,customer,yes,no,75.50,1
+bob.wilson@example.com,Bob,Wilson,+1555123456,vip,yes,yes,320.00,5
+alice.brown@example.com,Alice,Brown,,customer,yes,no,45.00,1
+charlie.davis@example.com,Charlie,Davis,+1555987654,new,no,no,0,0

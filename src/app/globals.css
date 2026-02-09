@@ -1,0 +1,347 @@
+@import "tailwindcss";
+
+:root {
+  --background: #04090a;
+  --foreground: #ffffff;
+  --card: #061112;
+  --card-foreground: #ffffff;
+  --popover: #061112;
+  --popover-foreground: #ffffff;
+  --primary: #041f1a;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.04);
+  --secondary-foreground: #ffffff;
+  --muted: rgba(255, 255, 255, 0.03);
+  --muted-foreground: rgba(255, 255, 255, 0.62);
+  --accent: #041f1a;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.09);
+  --input: rgba(255, 255, 255, 0.04);
+  --ring: rgba(255, 255, 255, 0.35);
+
+  --accent-hi: color-mix(in srgb, var(--accent) 28%, white 72%);
+  --accent-glow: color-mix(in srgb, var(--accent) 55%, white 45%);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans, ui-sans-serif), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  min-height: 100vh;
+}
+
+/* App background */
+.app-background {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  isolation: isolate;
+  position: relative;
+}
+
+.app-background::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    radial-gradient(900px circle at 15% 10%, rgba(4, 31, 26, 0.55), transparent 55%),
+    radial-gradient(700px circle at 85% 15%, rgba(4, 31, 26, 0.35), transparent 50%),
+    radial-gradient(800px circle at 50% 100%, rgba(4, 31, 26, 0.25), transparent 55%);
+  background-size: 72px 72px, 72px 72px, auto, auto, auto;
+  opacity: 0.22;
+  filter: saturate(1.05);
+}
+
+/* Premium component styles */
+.badge {
+  @apply inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-0.5 text-xs font-medium text-white/80;
+}
+
+.badge-muted {
+  @apply border-white/10 bg-white/[0.02] text-white/65;
+}
+
+.badge-success {
+  @apply border-emerald-400/20 bg-emerald-400/10 text-emerald-200;
+}
+
+.badge-warning {
+  @apply border-amber-400/20 bg-amber-400/10 text-amber-200;
+}
+
+.badge-danger {
+  @apply border-red-400/20 bg-red-400/10 text-red-200;
+}
+
+.badge-accent {
+  border-color: color-mix(in srgb, var(--accent-hi) 35%, transparent);
+  background: color-mix(in srgb, var(--accent-hi) 16%, transparent);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.btn-primary {
+  @apply relative inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium text-white transition-all duration-200 border border-white/10 shadow-lg shadow-black/40;
+  background: linear-gradient(135deg, rgba(4, 31, 26, 0.98) 0%, rgba(11, 58, 49, 0.96) 100%);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.10) inset;
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium text-white/90 bg-white/[0.04] border border-white/10 hover:bg-white/[0.06] hover:border-white/15 transition-all duration-200;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white/70 hover:text-white bg-transparent hover:bg-white/[0.04] border border-transparent hover:border-white/10 transition-all duration-200;
+}
+
+.card-premium {
+  @apply rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+}
+
+.card-premium-hover {
+  @apply rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md hover:bg-white/[0.04] hover:border-white/15 transition-all duration-300;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+}
+
+.input-premium {
+  @apply bg-white/[0.03] border border-white/10 text-white placeholder-white/40 rounded-xl px-4 py-3 focus:outline-none transition-all duration-200;
+  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+}
+
+.input-premium:focus {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-hi) 24%, transparent), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+/* Textarea specific styling for proper text wrapping */
+textarea.input-premium {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Select dropdown styling for dark theme */
+.input-premium select,
+select.input-premium {
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27rgba(255,255,255,0.4)%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e');
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.25rem;
+  padding-right: 2.5rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+}
+
+/* Option elements styling for dark theme */
+.input-premium option,
+select.input-premium option {
+  background-color: #061112;
+  color: #ffffff;
+  padding: 0.5rem;
+}
+
+/* Optgroup styling for dark theme */
+.input-premium optgroup,
+select.input-premium optgroup {
+  background-color: #04090a;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 600;
+}
+
+.gradient-premium {
+  background: radial-gradient(1400px circle at 15% 10%, rgba(4, 31, 26, 0.30), transparent 55%),
+    radial-gradient(1200px circle at 85% 20%, rgba(4, 31, 26, 0.18), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 45%);
+}
+
+.gradient-accent {
+  background: linear-gradient(135deg, rgba(4, 31, 26, 0.98) 0%, rgba(10, 83, 70, 0.95) 100%);
+}
+
+.text-premium {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.74) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-accent {
+  background: linear-gradient(135deg, var(--accent-hi) 0%, rgba(255, 255, 255, 0.92) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Premium shadows */
+.shadow-premium {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+}
+
+.shadow-3xl {
+  box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.9);
+}
+
+.border-premium {
+  @apply border border-white/10 hover:border-white/15 transition-colors duration-200;
+}
+
+/* Premium scrollbar */
+.scrollbar-premium::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-premium::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.scrollbar-premium::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+}
+
+.scrollbar-premium::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatSoft {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -14px, 0); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.55; filter: blur(0px); }
+  50% { opacity: 0.9; filter: blur(0.6px); }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-float-slow {
+    animation: floatSoft 9s ease-in-out infinite;
+  }
+
+  .animate-float-slower {
+    animation: floatSoft 12s ease-in-out infinite;
+  }
+
+  .animate-glow-pulse {
+    animation: glowPulse 6s ease-in-out infinite;
+  }
+
+  .animate-gradient-shift {
+    animation: gradientShift 10s ease-in-out infinite;
+    background-size: 200% 200%;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2.2s linear infinite;
+    background-size: 200% 100%;
+  }
+}
+
+/* Checkbox styling to match theme */
+input[type="checkbox"] {
+  @apply rounded border-white/20 bg-white/10 transition-all duration-200;
+  accent-color: #0a5346 !important;
+  width: 1rem !important;
+  height: 1rem !important;
+  cursor: pointer !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #0a5346 !important;
+  border-color: #0a5346 !important;
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e") !important;
+  background-size: 100% 100% !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+input[type="checkbox"]:focus {
+  --tw-ring-color: #0a5346 !important;
+  --tw-ring-offset-width: 0px !important;
+  outline: 2px solid rgba(10, 83, 70, 0.5) !important;
+  outline-offset: 2px !important;
+}
+
+input[type="checkbox"]:hover {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Loading spinner */
+.spinner {
+  border: 2px solid #374151;
+  border-top: 2px solid #ffffff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
