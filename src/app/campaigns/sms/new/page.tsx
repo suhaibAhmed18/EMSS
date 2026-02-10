@@ -383,8 +383,8 @@ export default function NewSMSCampaignPage() {
                   </div>
                   <div className="p-8 flex items-center justify-center min-h-[400px]">
                     <div className="max-w-sm w-full">
-                      <div className="bg-blue-500 text-white p-4 rounded-2xl rounded-bl-none shadow-lg">
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{customizedMessage}</p>
+                      <div className="bg-blue-500 text-white p-4 rounded-2xl rounded-bl-none shadow-lg break-words">
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">{customizedMessage}</p>
                       </div>
                       <p className={`text-xs mt-2 ml-2 font-medium ${
                         customizedMessage.length > 160 ? 'text-red-400' : 'text-white/40'
@@ -419,8 +419,8 @@ export default function NewSMSCampaignPage() {
 
               <div>
                 <label className="block text-white/80 mb-2 font-medium">Message Preview</label>
-                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
-                  <p className="text-white/80">{customizedMessage}</p>
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 break-words">
+                  <p className="text-white/80 whitespace-pre-wrap break-words overflow-wrap-anywhere">{customizedMessage}</p>
                 </div>
                 <p className="text-white/40 text-sm mt-1">
                   This is how your message will appear to recipients
@@ -456,8 +456,8 @@ export default function NewSMSCampaignPage() {
 
               <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.02]">
                 <h3 className="text-white font-semibold mb-3">Message Preview</h3>
-                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
-                  <p className="text-white/80">{customizedMessage}</p>
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 break-words">
+                  <p className="text-white/80 whitespace-pre-wrap break-words overflow-wrap-anywhere">{customizedMessage}</p>
                 </div>
               </div>
 
