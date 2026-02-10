@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authServer } from '@/lib/auth/server'
+import { getSupabaseAdmin } from '@/lib/database/client'
 import { emailTemplates } from '@/lib/templates/email-templates'
 import { smsTemplates } from '@/lib/templates/sms-templates'
-
-// In-memory storage for custom templates (replace with database in production)
-const customTemplates: Map<string, any[]> = new Map()
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,8 +15,24 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') // 'email' or 'sms'
     const category = searchParams.get('category')
 
-    // Get custom templates for this user
-    const userTemplates = customTemplates.get(user.id) || []
+    const supabase = getSupabaseAdmin()
+
+    // Get custom templates from database
+    let query = supabase
+      .from('templates')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('is_custom', true)
+
+    if (type) {
+      query = query.eq('type', type)
+    }
+
+    const { data: userTemplates, error } = await query
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching templates:', error)
+    }
 
     // Combine with built-in templates
     let builtInTemplates: any[] = []
@@ -42,7 +56,7 @@ export async function GET(request: NextRequest) {
       builtInTemplates = builtInTemplates.filter(t => t.category === category)
     }
 
-    const allTemplates = [...builtInTemplates, ...userTemplates]
+    const allTemplates = [...builtInTemplates, ...(userTemplates || [])]
 
     return NextResponse.json({ templates: allTemplates })
   } catch (error) {
@@ -96,15 +110,27 @@ export async function POST(request: NextRequest) {
       html: html || null,
       variables: variables || [],
       is_custom: true,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }
 
-    // Store in memory (replace with database in production)
-    const userTemplates = customTemplates.get(user.id) || []
-    userTemplates.push(template)
-    customTemplates.set(user.id, userTemplates)
+    // Save to database
+    const supabase = getSupabaseAdmin()
+    const { data, error } = await supabase
+      .from('templates')
+      .insert(template)
+      .select()
+      .single()
 
-    return NextResponse.json({ template }, { status: 201 })
+    if (error) {
+      console.error('Error saving template:', error)
+      return NextResponse.json(
+        { error: 'Failed to save template' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ template: data }, { status: 201 })
   } catch (error) {
     console.error('Failed to create template:', error)
     return NextResponse.json(

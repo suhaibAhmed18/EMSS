@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
-  Mail, MessageSquare, Bell, Clock, Tag, GitBranch, 
-  Plus, Settings, Save, ArrowLeft, MoreVertical, Zap
+  Mail, MessageSquare, Bell, Clock, Tag, 
+  Plus, Settings, Save, ArrowLeft, Trash2, Zap, GripVertical
 } from 'lucide-react'
 import Checkbox from '@/components/ui/Checkbox'
 
 interface WorkflowNode {
   id: string
-  type: 'trigger' | 'email' | 'sms' | 'push' | 'delay' | 'tag' | 'split'
+  type: 'trigger' | 'email' | 'sms' | 'delay' | 'tag'
   data: any
   position: { x: number; y: number }
 }
@@ -42,6 +42,7 @@ export default function WorkflowBuilderCanvas({
   const [stores, setStores] = useState<any[]>([])
   const [selectedStore, setSelectedStore] = useState('')
   const [isActive, setIsActive] = useState(true)
+  const [draggedNode, setDraggedNode] = useState<string | null>(null)
 
   useEffect(() => {
     loadStores()
@@ -136,6 +137,52 @@ export default function WorkflowBuilderCanvas({
     if (selectedNode?.id === nodeId) {
       setSelectedNode(null)
     }
+  }
+
+  const handleDragStart = (e: React.DragEvent, nodeId: string) => {
+    if (nodeId === 'trigger') return
+    setDraggedNode(nodeId)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent, targetNodeId: string) => {
+    e.preventDefault()
+    if (targetNodeId === 'trigger' || !draggedNode || draggedNode === targetNodeId) return
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e: React.DragEvent, targetNodeId: string) => {
+    e.preventDefault()
+    if (!draggedNode || draggedNode === targetNodeId || targetNodeId === 'trigger') return
+
+    const draggedIndex = nodes.findIndex(n => n.id === draggedNode)
+    const targetIndex = nodes.findIndex(n => n.id === targetNodeId)
+
+    if (draggedIndex === -1 || targetIndex === -1) return
+
+    // Don't allow moving before trigger
+    if (targetIndex === 0) return
+
+    const newNodes = [...nodes]
+    const [draggedItem] = newNodes.splice(draggedIndex, 1)
+    newNodes.splice(targetIndex, 0, draggedItem)
+
+    // Recalculate positions
+    newNodes.forEach((node, index) => {
+      if (node.type === 'trigger') {
+        node.position.y = 50
+      } else {
+        const actionIndex = newNodes.slice(0, index).filter(n => n.type !== 'trigger').length
+        node.position.y = 150 + (actionIndex * 120)
+      }
+    })
+
+    setNodes(newNodes)
+    setDraggedNode(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedNode(null)
   }
 
   const handleSave = () => {
@@ -247,10 +294,8 @@ export default function WorkflowBuilderCanvas({
         case 'trigger': return '⚡'
         case 'email': return <Mail className="w-5 h-5" />
         case 'sms': return <MessageSquare className="w-5 h-5" />
-        case 'push': return <Bell className="w-5 h-5" />
         case 'delay': return <Clock className="w-5 h-5" />
         case 'tag': return <Tag className="w-5 h-5" />
-        case 'split': return <GitBranch className="w-5 h-5" />
         default: return <Mail className="w-5 h-5" />
       }
     }
@@ -266,14 +311,10 @@ export default function WorkflowBuilderCanvas({
           return node.data.subject || 'Email'
         case 'sms':
           return 'SMS Message'
-        case 'push':
-          return 'Push Notification'
         case 'delay':
           return `Wait ${node.data.delay || 0} minutes`
         case 'tag':
           return `Tag: ${node.data.tag || 'contact'}`
-        case 'split':
-          return 'Conditional Split'
         default:
           return 'Action'
       }
@@ -282,9 +323,16 @@ export default function WorkflowBuilderCanvas({
     return (
       <div
         key={node.id}
-        className={`relative rounded-xl border-2 p-4 cursor-pointer transition-all hover:shadow-lg ${
+        draggable={node.type !== 'trigger'}
+        onDragStart={(e) => handleDragStart(e, node.id)}
+        onDragOver={(e) => handleDragOver(e, node.id)}
+        onDrop={(e) => handleDrop(e, node.id)}
+        onDragEnd={handleDragEnd}
+        className={`relative rounded-xl border-2 p-4 transition-all hover:shadow-lg ${
           isSelected ? 'border-[color:var(--accent-hi)] shadow-lg' : 'border-white/10'
-        } ${node.type === 'trigger' ? 'border-blue-400/50 bg-blue-400/5' : 'bg-white/[0.03]'}`}
+        } ${node.type === 'trigger' ? 'border-blue-400/50 bg-blue-400/5' : 'bg-white/[0.03] cursor-move'} ${
+          draggedNode === node.id ? 'opacity-50' : ''
+        }`}
         style={{
           position: 'absolute',
           top: node.position.y,
@@ -294,6 +342,11 @@ export default function WorkflowBuilderCanvas({
         onClick={() => setSelectedNode(node)}
       >
         <div className="flex items-start gap-3">
+          {node.type !== 'trigger' && (
+            <div className="text-white/40 cursor-move pt-1">
+              <GripVertical className="w-4 h-4" />
+            </div>
+          )}
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
             node.type === 'trigger' ? 'bg-blue-400/20 text-blue-300' : 'bg-white/[0.06] text-white/70'
           }`}>
@@ -327,9 +380,9 @@ export default function WorkflowBuilderCanvas({
                 e.stopPropagation()
                 deleteNode(node.id)
               }}
-              className="text-white/40 hover:text-red-400"
+              className="text-white/40 hover:text-red-400 transition-colors"
             >
-              <MoreVertical className="w-4 h-4" />
+              <Trash2 className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -424,13 +477,6 @@ export default function WorkflowBuilderCanvas({
                 <MessageSquare className="w-5 h-5 text-white/70" />
                 <span className="text-sm font-medium text-white">SMS</span>
               </button>
-              <button
-                onClick={() => addNode('push')}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-[color:var(--accent-hi)] hover:bg-white/[0.04] transition-all text-left"
-              >
-                <Bell className="w-5 h-5 text-white/70" />
-                <span className="text-sm font-medium text-white">Push notification</span>
-              </button>
             </div>
           </div>
 
@@ -450,13 +496,6 @@ export default function WorkflowBuilderCanvas({
               >
                 <Tag className="w-5 h-5 text-white/70" />
                 <span className="text-sm font-medium text-white">Tag contact</span>
-              </button>
-              <button
-                onClick={() => addNode('split')}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-[color:var(--accent-hi)] hover:bg-white/[0.04] transition-all text-left"
-              >
-                <GitBranch className="w-5 h-5 text-white/70" />
-                <span className="text-sm font-medium text-white">Split</span>
               </button>
             </div>
           </div>
@@ -854,6 +893,13 @@ function NodeEditor({ node, onUpdate, onClose }: NodeEditorProps) {
               placeholder="Email content..."
             />
           </div>
+
+          <button
+            onClick={onClose}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium"
+          >
+            Save
+          </button>
         </div>
       </div>
     )
@@ -880,6 +926,13 @@ function NodeEditor({ node, onUpdate, onClose }: NodeEditorProps) {
             />
             <p className="text-xs text-white/50 mt-1">{(data.message || '').length}/160</p>
           </div>
+
+          <button
+            onClick={onClose}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all"
+          >
+            Save
+          </button>
         </div>
       </div>
     )
@@ -904,6 +957,13 @@ function NodeEditor({ node, onUpdate, onClose }: NodeEditorProps) {
               min="1"
             />
           </div>
+
+          <button
+            onClick={onClose}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium"
+          >
+            Save
+          </button>
         </div>
       </div>
     )
@@ -928,6 +988,13 @@ function NodeEditor({ node, onUpdate, onClose }: NodeEditorProps) {
               placeholder="e.g., vip-customer"
             />
           </div>
+
+          <button
+            onClick={onClose}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium"
+          >
+            Save
+          </button>
         </div>
       </div>
     )

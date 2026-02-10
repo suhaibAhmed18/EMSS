@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Eye, Type, AlignLeft, Image as ImageIcon, Link as LinkIcon, Trash2, Plus, MoveVertical } from 'lucide-react'
 
 interface EmailBlock {
@@ -82,6 +82,21 @@ export default function EmailBuilder({ initialBlocks = [], initialHtml = '', onS
       }
     })
     
+    // Extract images
+    doc.querySelectorAll('img').forEach((img, index) => {
+      // Check if the image is inside a link
+      const parentLink = img.closest('a')
+      blocks.push({
+        id: `image-${Date.now()}-${index}`,
+        type: 'image',
+        content: {
+          imageUrl: img.src || '',
+          url: parentLink?.href || '#',
+          textAlign: 'center'
+        }
+      })
+    })
+    
     return blocks.length > 0 ? blocks : getDefaultBlocks()
   }
 
@@ -128,16 +143,40 @@ export default function EmailBuilder({ initialBlocks = [], initialHtml = '', onS
   const [showPreview, setShowPreview] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [templateName, setTemplateName] = useState('')
+  const isInitialMount = useRef(true)
+  const lastHtmlRef = useRef(initialHtml)
 
   // Update blocks when initialHtml changes (e.g., when navigating back and forth in wizard)
+  // But skip if we're just auto-saving (HTML we generated ourselves)
   useEffect(() => {
-    if (initialHtml) {
-      const parsedBlocks = parseHtmlToBlocks(initialHtml)
-      if (parsedBlocks.length > 0) {
-        setBlocks(parsedBlocks)
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      lastHtmlRef.current = initialHtml
+      return
+    }
+    
+    // Only parse if the HTML changed from an external source (not our own generation)
+    if (initialHtml && initialHtml !== lastHtmlRef.current) {
+      const currentHtml = generateHTML()
+      // If the incoming HTML is different from what we just generated, parse it
+      if (initialHtml !== currentHtml) {
+        const parsedBlocks = parseHtmlToBlocks(initialHtml)
+        if (parsedBlocks.length > 0) {
+          setBlocks(parsedBlocks)
+        }
       }
+      lastHtmlRef.current = initialHtml
     }
   }, [initialHtml])
+
+  // Auto-save changes whenever blocks are modified
+  useEffect(() => {
+    // Skip the initial render to avoid overwriting with default blocks
+    if (blocks.length > 0) {
+      const html = generateHTML()
+      onSave(blocks, html)
+    }
+  }, [blocks])
 
   const addBlock = (type: EmailBlock['type']) => {
     const newBlock: EmailBlock = {
@@ -146,6 +185,8 @@ export default function EmailBuilder({ initialBlocks = [], initialHtml = '', onS
       content: getDefaultContent(type)
     }
     setBlocks([...blocks, newBlock])
+    // Auto-select the newly added block
+    setSelectedBlockId(newBlock.id)
   }
 
   const getDefaultContent = (type: EmailBlock['type']) => {
@@ -157,7 +198,7 @@ export default function EmailBuilder({ initialBlocks = [], initialHtml = '', onS
       case 'button':
         return { buttonText: 'Click Here', url: '#', backgroundColor: '#10b981', textColor: '#ffffff', textAlign: 'center' as const }
       case 'image':
-        return { imageUrl: 'https://via.placeholder.com/600x300', url: '#', textAlign: 'center' as const }
+        return { imageUrl: 'https://placehold.co/600x300/e2e8f0/64748b?text=Add+Your+Image', url: '#', textAlign: 'center' as const }
       case 'spacer':
         return { padding: '20px' }
     }
@@ -214,7 +255,7 @@ export default function EmailBuilder({ initialBlocks = [], initialHtml = '', onS
       case 'button':
         return `<div style="text-align: ${block.content.textAlign}; margin: 30px 0;"><a href="${block.content.url}" style="display: inline-block; background-color: ${block.content.backgroundColor}; color: ${block.content.textColor}; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">${block.content.buttonText}</a></div>`
       case 'image':
-        return `<div style="text-align: center; margin: 30px 0;"><a href="${block.content.url}"><img src="${block.content.imageUrl}" style="max-width: 100%; width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" /></a></div>`
+        return `<div style="text-align: ${block.content.textAlign || 'center'}; margin: 30px 0;">${block.content.url && block.content.url !== '#' ? `<a href="${block.content.url}">` : ''}<img src="${block.content.imageUrl}" style="max-width: 100%; height: auto; border-radius: 8px; display: inline-block;" />${block.content.url && block.content.url !== '#' ? '</a>' : ''}</div>`
       case 'spacer':
         return `<div style="height: ${block.content.padding};"></div>`
       default:
@@ -396,7 +437,43 @@ export default function EmailBuilder({ initialBlocks = [], initialHtml = '', onS
                       </div>
 
                       {/* Block Content */}
-                      <div dangerouslySetInnerHTML={{ __html: renderBlockHTML(block) }} />
+                      {block.type === 'image' ? (
+                        <div style={{ textAlign: block.content.textAlign || 'center', margin: '30px 0' }}>
+                          {block.content.url && block.content.url !== '#' ? (
+                            <a href={block.content.url}>
+                              <img 
+                                src={block.content.imageUrl || 'https://placehold.co/600x300/e2e8f0/64748b?text=No+Image'} 
+                                alt="Email content"
+                                style={{ 
+                                  maxWidth: '100%', 
+                                  height: 'auto', 
+                                  borderRadius: '8px', 
+                                  display: 'inline-block' 
+                                }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'https://placehold.co/600x300/fee2e2/dc2626?text=Image+Load+Error'
+                                }}
+                              />
+                            </a>
+                          ) : (
+                            <img 
+                              src={block.content.imageUrl || 'https://placehold.co/600x300/e2e8f0/64748b?text=No+Image'} 
+                              alt="Email content"
+                              style={{ 
+                                maxWidth: '100%', 
+                                height: 'auto', 
+                                borderRadius: '8px', 
+                                display: 'inline-block' 
+                              }}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://placehold.co/600x300/fee2e2/dc2626?text=Image+Load+Error'
+                              }}
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        <div dangerouslySetInnerHTML={{ __html: renderBlockHTML(block) }} />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -558,7 +635,7 @@ export default function EmailBuilder({ initialBlocks = [], initialHtml = '', onS
                   </>
                 )}
 
-                {selectedBlock.type === 'button' && (
+                {selectedBlock.type === 'image' && (
                   <>
                     <div>
                       <label className="block text-white/80 text-sm mb-2">Upload Image</label>

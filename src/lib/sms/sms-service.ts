@@ -84,6 +84,7 @@ export class SMSService {
     recipient: Contact,
     data: Record<string, unknown> = {}
   ): Promise<SMSSendResult> {
+    const supabaseAdmin = getSupabaseAdmin()
     // Get template from database
     const { data: template, error } = await supabaseAdmin
       .from('campaign_templates')
@@ -123,6 +124,7 @@ export class SMSService {
    * Update delivery status for tracked SMS
    */
   async updateDeliveryStatus(messageId: string): Promise<void> {
+    const supabaseAdmin = getSupabaseAdmin()
     const status = await telnyxSMSService.trackDelivery(messageId)
     
     // Find campaign send record
@@ -205,6 +207,7 @@ export class SMSService {
     delivered: number
     failed: number
   }> {
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: sends } = await supabaseAdmin
       .from('campaign_sends')
       .select('status, delivered_at, bounced_at')
@@ -231,6 +234,7 @@ export class SMSService {
     results: SMSSendResult[],
     recipients: Contact[]
   ): Promise<void> {
+    const supabaseAdmin = getSupabaseAdmin()
     const sends: CreateCampaignSend[] = results.map((result, index) => ({
       campaign_id: campaignId,
       campaign_type: campaignType,
@@ -253,6 +257,7 @@ export class SMSService {
     campaignType: 'email' | 'sms',
     updates: Record<string, unknown>
   ): Promise<void> {
+    const supabaseAdmin = getSupabaseAdmin()
     const table = campaignType === 'email' ? 'email_campaigns' : 'sms_campaigns'
     
     await supabaseAdmin
@@ -268,37 +273,40 @@ export class SMSService {
    * Handle message sent webhook
    */
   private async handleMessageSent(data: Record<string, unknown>): Promise<void> {
+    const supabaseAdmin = getSupabaseAdmin()
     await supabaseAdmin
       .from('campaign_sends')
       .update({ status: 'pending' })
-      .eq('external_message_id', data.payload.id)
+      .eq('external_message_id', (data.payload as any).id)
   }
 
   /**
    * Handle message delivered webhook
    */
   private async handleMessageDelivered(data: Record<string, unknown>): Promise<void> {
+    const supabaseAdmin = getSupabaseAdmin()
     await supabaseAdmin
       .from('campaign_sends')
       .update({ 
         status: 'delivered',
-        delivered_at: new Date(data.occurred_at)
+        delivered_at: new Date(data.occurred_at as string)
       })
-      .eq('external_message_id', data.payload.id)
+      .eq('external_message_id', (data.payload as any).id)
   }
 
   /**
    * Handle message failed webhook
    */
   private async handleMessageFailed(data: Record<string, unknown>): Promise<void> {
+    const supabaseAdmin = getSupabaseAdmin()
     await supabaseAdmin
       .from('campaign_sends')
       .update({ 
         status: 'failed',
-        bounced_at: new Date(data.occurred_at),
-        error_message: data.payload.errors?.[0]?.detail || 'SMS delivery failed'
+        bounced_at: new Date(data.occurred_at as string),
+        error_message: (data.payload as any).errors?.[0]?.detail || 'SMS delivery failed'
       })
-      .eq('external_message_id', data.payload.id)
+      .eq('external_message_id', (data.payload as any).id)
   }
 
   /**

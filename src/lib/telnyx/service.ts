@@ -1,6 +1,6 @@
 import Telnyx from 'telnyx'
 
-const telnyx = new Telnyx(process.env.TELNYX_API_KEY || 'dummy_key')
+const telnyx = new Telnyx({ apiKey: process.env.TELNYX_API_KEY || 'dummy_key' })
 
 interface PhoneNumber {
   id: string

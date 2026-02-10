@@ -71,20 +71,20 @@ export default function StoreInformation() {
           </div>
           <h3 className="text-xl font-semibold text-white mb-2">No Store Connected</h3>
           <p className="text-white/60 mb-6">{error}</p>
-          <button 
-            onClick={loadStoreData}
-            className="btn-secondary inline-flex items-center"
+          <a 
+            href="/stores/connect"
+            className="btn-primary inline-flex items-center"
           >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Retry
-          </button>
+            <Store className="w-4 h-4 mr-2" />
+            Connect Store
+          </a>
         </div>
       </div>
     )
   }
 
   const handleDisconnect = async () => {
-    if (!confirm('Are you sure you want to disconnect your store? This will remove all store data and settings.')) {
+    if (!confirm('Are you sure you want to disconnect your store? This will permanently delete all store data including contacts, campaigns, and settings. This action cannot be undone.')) {
       return
     }
 
@@ -97,7 +97,7 @@ export default function StoreInformation() {
       if (response.ok) {
         // Reload to show "no store connected" state
         setStoreData(null)
-        setError('')
+        setError('No store connected. Please connect your Shopify store first.')
       } else {
         const errorData = await response.json()
         setError(errorData.error || 'Failed to disconnect store')

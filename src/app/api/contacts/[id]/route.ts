@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authServer } from '@/lib/auth/server'
+import { databaseService } from '@/lib/database/service'
 
 export async function GET(
   request: NextRequest,
@@ -12,22 +13,17 @@ export async function GET(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    // For now, return a placeholder since database isn't set up
-    return NextResponse.json({
-      id: id,
-      first_name: 'Sample',
-      last_name: 'Contact',
-      email: 'sample@example.com',
-      phone: '+1234567890',
-      tags: [],
-      segments: [],
-      total_spent: 0,
-      order_count: 0,
-      email_consent: false,
-      sms_consent: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    })
+    // Get contact from database
+    const result = await databaseService.contacts.getContact(id)
+    
+    if (result.error || !result.data) {
+      return NextResponse.json(
+        { error: result.error?.message || 'Contact not found' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(result.data)
   } catch (error) {
     console.error('Failed to fetch contact:', error)
     return NextResponse.json(
@@ -50,15 +46,20 @@ export async function PUT(
 
     const updates = await request.json()
     
-    // For now, return success since database isn't set up
+    // Update contact in database
+    const result = await databaseService.contacts.updateContact(id, updates)
+    
+    if (result.error || !result.data) {
+      return NextResponse.json(
+        { error: result.error?.message || 'Failed to update contact' },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Contact updated successfully (demo mode)',
-      contact: {
-        id: id,
-        ...updates,
-        updated_at: new Date().toISOString()
-      }
+      message: 'Contact updated successfully',
+      contact: result.data
     })
   } catch (error) {
     console.error('Failed to update contact:', error)
@@ -80,10 +81,19 @@ export async function DELETE(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    // For now, return success since database isn't set up
+    // Delete contact from database
+    const result = await databaseService.contacts.deleteContact(id)
+    
+    if (result.error) {
+      return NextResponse.json(
+        { error: result.error.message || 'Failed to delete contact' },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Contact deleted successfully (demo mode)'
+      message: 'Contact deleted successfully'
     })
   } catch (error) {
     console.error('Failed to delete contact:', error)

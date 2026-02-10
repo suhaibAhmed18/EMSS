@@ -10,7 +10,6 @@ interface SettingsSidebarProps {
 const settingsTabs = [
   { id: 'profile', name: 'Profile information', icon: User },
   { id: 'pricing', name: 'Pricing and usage', icon: DollarSign },
-  { id: 'sms-pricing', name: 'SMS pricing', icon: DollarSign },
   { id: 'store-info', name: 'Store information', icon: Info },
   { id: 'domains', name: 'Domains', icon: Globe },
   { id: 'email', name: 'Email addresses', icon: Mail },

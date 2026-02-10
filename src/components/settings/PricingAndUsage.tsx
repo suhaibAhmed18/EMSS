@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { Package, TrendingUp, Info, ExternalLink, Check, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { createBrowserClient } from '@supabase/ssr'
+import SubscriptionUpgradeModal from '@/components/SubscriptionUpgradeModal'
 
 export default function PricingAndUsage() {
   const [activeSubTab, setActiveSubTab] = useState('plan-overview')
@@ -11,12 +13,16 @@ export default function PricingAndUsage() {
   const [loading, setLoading] = useState(true)
   const [upgrading, setUpgrading] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState('')
+  const [userId, setUserId] = useState<string>('')
   const router = useRouter()
   const searchParams = useSearchParams()
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
-    loadPlanData()
+    loadUserAndPlanData()
     
     // Check for upgrade success
     if (searchParams.get('upgraded') === 'true') {
@@ -25,6 +31,21 @@ export default function PricingAndUsage() {
       router.replace('/settings')
     }
   }, [searchParams])
+
+  const loadUserAndPlanData = async () => {
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+      }
+      
+      // Load plan data
+      await loadPlanData()
+    } catch (error) {
+      console.error('Failed to load user data:', error)
+    }
+  }
 
   const loadPlanData = async () => {
     try {
@@ -40,33 +61,7 @@ export default function PricingAndUsage() {
     }
   }
 
-  const handleUpgrade = async (plan: string) => {
-    setUpgrading(true)
-    try {
-      const response = await fetch('/api/settings/upgrade', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan })
-      })
-
-      const data = await response.json()
-
-      if (response.ok && data.url) {
-        // Redirect to Stripe checkout
-        window.location.href = data.url
-      } else {
-        alert(data.error || 'Failed to process upgrade')
-        setUpgrading(false)
-      }
-    } catch (error) {
-      console.error('Upgrade error:', error)
-      alert('Failed to process upgrade. Please try again.')
-      setUpgrading(false)
-    }
-  }
-
-  const openUpgradeModal = (plan: string) => {
-    setSelectedPlan(plan)
+  const openUpgradeModal = () => {
     setShowUpgradeModal(true)
   }
 
@@ -104,18 +99,10 @@ export default function PricingAndUsage() {
         </p>
         {currentPlan !== 'enterprise' && (
           <button 
-            onClick={() => openUpgradeModal(currentPlan === 'professional' ? 'enterprise' : 'professional')}
+            onClick={openUpgradeModal}
             className="btn-primary inline-flex items-center"
-            disabled={upgrading}
           >
-            {upgrading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              <>Upgrade Plan</>
-            )}
+            Upgrade Plan
           </button>
         )}
       </div>
@@ -144,32 +131,24 @@ export default function PricingAndUsage() {
         <PlanOverview 
           planData={planData} 
           onUpgrade={openUpgradeModal}
-          upgrading={upgrading}
         />
       )}
       {activeSubTab === 'sms-credits' && <SmsCredits usage={usage} />}
       {activeSubTab === 'add-ons' && <AddOns />}
 
       {/* Upgrade Modal */}
-      {showUpgradeModal && (
-        <UpgradeModal
-          currentPlan={currentPlan}
-          selectedPlan={selectedPlan}
-          onConfirm={() => {
-            setShowUpgradeModal(false)
-            handleUpgrade(selectedPlan)
-          }}
-          onCancel={() => {
-            setShowUpgradeModal(false)
-            setSelectedPlan('')
-          }}
+      {showUpgradeModal && userId && (
+        <SubscriptionUpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          userId={userId}
         />
       )}
     </div>
   )
 }
 
-function PlanOverview({ planData, onUpgrade, upgrading }: any) {
+function PlanOverview({ planData, onUpgrade }: any) {
   const usage = planData?.usage || {}
   const currentPlan = planData?.plan?.toLowerCase() || 'free'
   
@@ -202,11 +181,10 @@ function PlanOverview({ planData, onUpgrade, upgrading }: any) {
           </div>
           {currentPlan !== 'enterprise' && (
             <button 
-              onClick={() => onUpgrade(currentPlan === 'professional' ? 'enterprise' : 'professional')}
+              onClick={() => onUpgrade()}
               className="btn-secondary text-sm"
-              disabled={upgrading}
             >
-              {upgrading ? 'Processing...' : 'Upgrade Plan'}
+              Upgrade Plan
             </button>
           )}
         </div>
@@ -247,7 +225,7 @@ function PlanOverview({ planData, onUpgrade, upgrading }: any) {
               </span>
               {currentPlan !== 'enterprise' && (
                 <button 
-                  onClick={() => onUpgrade(currentPlan === 'professional' ? 'enterprise' : 'professional')}
+                  onClick={() => onUpgrade()}
                   className="text-sm text-[#16a085] hover:underline"
                 >
                   Upgrade to increase your email limit
@@ -430,91 +408,6 @@ function AddOns() {
           </p>
           <button className="text-sm text-[#16a085] hover:underline">
             Coming soon
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function UpgradeModal({ currentPlan, selectedPlan, onConfirm, onCancel }: any) {
-  const planDetails: Record<string, { name: string, price: number, features: string[] }> = {
-    professional: {
-      name: 'Professional',
-      price: 49,
-      features: [
-        '50,000 emails per month',
-        '10,000 contacts',
-        'Advanced automation',
-        'SMS campaigns',
-        'A/B testing',
-        'Priority support'
-      ]
-    },
-    enterprise: {
-      name: 'Enterprise',
-      price: 99,
-      features: [
-        '500,000 emails per month',
-        '100,000 contacts',
-        'Everything in Professional',
-        'Dedicated account manager',
-        'Custom integrations',
-        '24/7 phone support'
-      ]
-    }
-  }
-
-  const plan = planDetails[selectedPlan]
-
-  return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="card-premium max-w-lg w-full p-6">
-        <h3 className="text-xl font-semibold text-white mb-4">
-          Upgrade to {plan?.name} Plan
-        </h3>
-        
-        <div className="mb-6">
-          <div className="text-3xl font-bold text-white mb-2">
-            ${plan?.price}
-            <span className="text-lg font-normal text-white/60">/month</span>
-          </div>
-          <p className="text-sm text-white/60">
-            Billed monthly • Cancel anytime
-          </p>
-        </div>
-
-        <div className="mb-6">
-          <h4 className="text-sm font-semibold text-white mb-3">What's included:</h4>
-          <div className="space-y-2">
-            {plan?.features.map((feature, index) => (
-              <div key={index} className="flex items-start">
-                <Check className="w-4 h-4 text-[#16a085] mr-2 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-white/70">{feature}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-          <p className="text-sm text-blue-200">
-            <Info className="w-4 h-4 inline mr-2" />
-            You'll be redirected to Stripe to complete your upgrade securely
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 px-4 py-2 bg-white/[0.05] hover:bg-white/[0.08] text-white rounded-lg transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 btn-primary"
-          >
-            Upgrade Now
           </button>
         </div>
       </div>

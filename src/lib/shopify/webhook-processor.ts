@@ -273,7 +273,7 @@ export class WebhookProcessor {
       segments: [], // Initialize empty segments array
       email_consent: customer.accepts_marketing || false,
       sms_consent: false, // Default to false, will be updated based on actual consent
-      total_spent: parseFloat(customer.total_spent || '0'),
+      total_spent: parseFloat(String(customer.total_spent || '0')),
       order_count: customer.orders_count || 0,
       last_order_at: null, // Will be updated when processing orders
     }

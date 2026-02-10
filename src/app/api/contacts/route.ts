@@ -102,9 +102,19 @@ export async function POST(request: NextRequest) {
     const contactData = await request.json()
     console.log('👤 Creating new contact:', contactData.email)
 
+    // Validate required fields
+    if (!contactData.email) {
+      return NextResponse.json(
+        { error: 'Email is required' },
+        { status: 400 }
+      )
+    }
+
     try {
       // Get user's first store (or specific store if provided)
       const stores = await databaseService.getStoresByUserId(user.id)
+      console.log(`📊 Found ${stores.length} store(s) for user ${user.id}`)
+      
       if (stores.length === 0) {
         return NextResponse.json(
           { error: 'No stores connected. Please connect a Shopify store first.' },
@@ -113,6 +123,7 @@ export async function POST(request: NextRequest) {
       }
 
       const store = stores[0] // Use first store for now
+      console.log(`🏪 Using store: ${store.store_name} (${store.id})`)
       
       // Add store_id to contact data
       const fullContactData = {
@@ -136,9 +147,30 @@ export async function POST(request: NextRequest) {
     } catch (dbError) {
       console.error('❌ Database error creating contact:', dbError)
       
-      if (dbError instanceof Error && dbError.message.includes('relation') && dbError.message.includes('does not exist')) {
+      // Handle specific database errors
+      if (dbError instanceof Error) {
+        // Table doesn't exist
+        if (dbError.message.includes('relation') && dbError.message.includes('does not exist')) {
+          return NextResponse.json(
+            { error: 'Database tables not set up yet. Please run the database migrations first.' },
+            { status: 500 }
+          )
+        }
+        
+        // Duplicate email
+        if (dbError.message.includes('duplicate key') || dbError.message.includes('unique constraint')) {
+          return NextResponse.json(
+            { error: 'A contact with this email already exists in your store.' },
+            { status: 400 }
+          )
+        }
+        
+        // Return the actual error message for debugging
         return NextResponse.json(
-          { error: 'Database tables not set up yet. Please run the database migrations first.' },
+          { 
+            error: 'Database error',
+            details: dbError.message 
+          },
           { status: 500 }
         )
       }

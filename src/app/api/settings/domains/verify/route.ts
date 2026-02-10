@@ -47,6 +47,8 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString()
     }
 
+    let businessEmailSaved = false
+
     // Store business email if provided
     if (businessEmail) {
       // Validate email format
@@ -64,6 +66,30 @@ export async function POST(request: NextRequest) {
       }
 
       updateData.business_email = businessEmail
+
+      // Automatically add business email to sender_email_addresses
+      try {
+        const { error: emailInsertError } = await supabase
+          .from('sender_email_addresses')
+          .upsert({
+            user_id: user.id,
+            email: businessEmail,
+            status: 'Verified', // Auto-verify since domain is verified
+            verified_on: new Date().toISOString(),
+            is_shared: false,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id,email',
+            ignoreDuplicates: false
+          })
+
+        if (!emailInsertError) {
+          businessEmailSaved = true
+        }
+      } catch (emailError) {
+        console.error('Failed to save business email to sender addresses:', emailError)
+        // Don't fail the verification if email save fails
+      }
     }
 
     const { data: updatedDomain, error: updateError } = await supabase
@@ -82,7 +108,10 @@ export async function POST(request: NextRequest) {
       success: true,
       verified: true,
       domain: updatedDomain,
-      message: 'Domain verified successfully'
+      businessEmailSaved,
+      message: businessEmailSaved 
+        ? 'Domain verified successfully and business email added to your sender addresses'
+        : 'Domain verified successfully'
     })
   } catch (error) {
     console.error('Failed to verify domain:', error)

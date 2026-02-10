@@ -42,20 +42,29 @@ export default function CampaignPreview({
                   <div style={{ 
                     fontSize: element.styles?.fontSize || '16px',
                     color: element.styles?.color || '#333',
-                    textAlign: element.content?.alignment || 'left'
+                    fontWeight: element.styles?.fontWeight || 'normal',
+                    lineHeight: element.styles?.lineHeight || '1.5',
+                    textAlign: element.content?.alignment || 'left',
+                    padding: element.styles?.padding || '10px'
                   }}>
                     {element.content?.text || 'Text content'}
                   </div>
                 )}
                 {element.type === 'image' && element.content?.src && (
-                  <img 
-                    src={element.content.src} 
-                    alt={element.content.alt || 'Image'} 
-                    style={{ maxWidth: '100%', height: 'auto' }}
-                  />
+                  <div style={{ textAlign: element.content?.alignment || 'center', padding: element.styles?.padding || '10px' }}>
+                    <img 
+                      src={element.content.src} 
+                      alt={element.content.alt || 'Image'} 
+                      style={{ 
+                        width: element.styles?.width || '100%',
+                        maxWidth: element.styles?.maxWidth || '600px',
+                        height: 'auto'
+                      }}
+                    />
+                  </div>
                 )}
                 {element.type === 'button' && (
-                  <div style={{ textAlign: element.content?.alignment || 'center' }}>
+                  <div style={{ textAlign: element.content?.alignment || 'center', padding: '10px' }}>
                     <a
                       href={element.content?.link || '#'}
                       style={{
@@ -63,13 +72,29 @@ export default function CampaignPreview({
                         color: element.styles?.color || '#ffffff',
                         padding: element.styles?.padding || '12px 24px',
                         borderRadius: element.styles?.borderRadius || '4px',
-                        textDecoration: 'none',
-                        display: 'inline-block'
+                        fontSize: element.styles?.fontSize || '16px',
+                        textDecoration: element.styles?.textDecoration || 'none',
+                        display: element.styles?.display || 'inline-block',
+                        margin: element.styles?.margin || '0'
                       }}
                     >
                       {element.content?.text || 'Button'}
                     </a>
                   </div>
+                )}
+                {element.type === 'divider' && (
+                  <hr style={{ 
+                    borderTop: element.styles?.borderTop || '1px solid #ddd',
+                    margin: element.styles?.margin || '20px 0',
+                    width: element.styles?.width || '100%',
+                    border: '0'
+                  }} />
+                )}
+                {element.type === 'spacer' && (
+                  <div style={{ 
+                    height: element.styles?.height || '20px',
+                    width: element.styles?.width || '100%'
+                  }}></div>
                 )}
               </div>
             ))}

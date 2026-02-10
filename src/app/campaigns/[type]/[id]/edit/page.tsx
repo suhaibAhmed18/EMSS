@@ -39,6 +39,7 @@ export default function EditCampaignPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [emailElements, setEmailElements] = useState<EmailElement[]>([])
+  const [emailAddresses, setEmailAddresses] = useState<any[]>([])
   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false)
   const [showTemplateSelector, setShowTemplateSelector] = useState(false)
   const [storeId, setStoreId] = useState<string | null>(null)
@@ -48,7 +49,20 @@ export default function EditCampaignPage() {
 
   useEffect(() => {
     loadCampaign()
+    loadEmailAddresses()
   }, [campaignId, campaignType])
+
+  const loadEmailAddresses = async () => {
+    try {
+      const response = await fetch('/api/settings/email-addresses')
+      if (response.ok) {
+        const data = await response.json()
+        setEmailAddresses(data.emailAddresses || [])
+      }
+    } catch (error) {
+      console.error('Failed to load email addresses:', error)
+    }
+  }
 
   const loadCampaign = async () => {
     try {
@@ -89,53 +103,59 @@ export default function EditCampaignPage() {
         case 'text':
           const tag = element.content.tag || 'p'
           const textStyles = `
-            font-size: ${element.styles.fontSize};
-            color: ${element.styles.color};
-            font-weight: ${element.styles.fontWeight};
-            line-height: ${element.styles.lineHeight};
-            text-align: ${element.content.alignment};
-            padding: ${element.styles.padding};
+            font-size: ${element.styles?.fontSize || '16px'};
+            color: ${element.styles?.color || '#333'};
+            font-weight: ${element.styles?.fontWeight || 'normal'};
+            line-height: ${element.styles?.lineHeight || '1.5'};
+            text-align: ${element.content?.alignment || 'left'};
+            padding: ${element.styles?.padding || '10px'};
           `
           html += `<${tag} style="${textStyles}">${element.content.text}</${tag}>`
           break
           
         case 'image':
           const imgStyles = `
-            width: ${element.styles.width};
-            max-width: ${element.styles.maxWidth};
+            width: ${element.styles?.width || '100%'};
+            max-width: ${element.styles?.maxWidth || '600px'};
             height: auto;
             display: block;
             margin: 0 auto;
-            padding: ${element.styles.padding};
           `
+          const imgWrapperStyles = `text-align: ${element.content?.alignment || 'center'}; padding: ${element.styles?.padding || '10px'};`
           const imgHtml = `<img src="${element.content.src}" alt="${element.content.alt}" style="${imgStyles}" />`
           html += element.content.link 
-            ? `<a href="${element.content.link}" style="text-align: ${element.content.alignment}; display: block;">${imgHtml}</a>`
-            : `<div style="text-align: ${element.content.alignment};">${imgHtml}</div>`
+            ? `<a href="${element.content.link}" style="${imgWrapperStyles}">${imgHtml}</a>`
+            : `<div style="${imgWrapperStyles}">${imgHtml}</div>`
           break
           
         case 'button':
           const btnStyles = `
-            background-color: ${element.styles.backgroundColor};
-            color: ${element.styles.color};
-            padding: ${element.styles.padding};
-            border-radius: ${element.styles.borderRadius};
-            font-size: ${element.styles.fontSize};
-            text-decoration: ${element.styles.textDecoration};
-            display: ${element.styles.display};
-            margin: ${element.styles.margin};
+            background-color: ${element.styles?.backgroundColor || '#007bff'};
+            color: ${element.styles?.color || '#ffffff'};
+            padding: ${element.styles?.padding || '12px 24px'};
+            border-radius: ${element.styles?.borderRadius || '4px'};
+            font-size: ${element.styles?.fontSize || '16px'};
+            text-decoration: ${element.styles?.textDecoration || 'none'};
+            display: ${element.styles?.display || 'inline-block'};
+            margin: ${element.styles?.margin || '0'};
           `
-          html += `<div style="text-align: ${element.content.alignment}; padding: 10px;">
+          html += `<div style="text-align: ${element.content?.alignment || 'center'}; padding: 10px;">
             <a href="${element.content.link}" style="${btnStyles}">${element.content.text}</a>
           </div>`
           break
           
         case 'divider':
-          html += `<hr style="${element.styles.borderTop}; margin: ${element.styles.margin}; width: ${element.styles.width}; border: 0;" />`
+          const dividerStyles = `
+            border-top: ${element.styles?.borderTop || '1px solid #ddd'};
+            margin: ${element.styles?.margin || '20px 0'};
+            width: ${element.styles?.width || '100%'};
+            border: 0;
+          `
+          html += `<hr style="${dividerStyles}" />`
           break
           
         case 'spacer':
-          html += `<div style="height: ${element.styles.height}; width: ${element.styles.width};"></div>`
+          html += `<div style="height: ${element.styles?.height || '20px'}; width: ${element.styles?.width || '100%'};"></div>`
           break
       }
     })
@@ -398,13 +418,23 @@ export default function EditCampaignPage() {
                     <label className="block text-sm font-medium text-white/55 mb-2">
                       From Email *
                     </label>
-                    <input
-                      type="email"
+                    <select
                       value={campaign.from_email || ''}
                       onChange={(e) => setCampaign({ ...campaign, from_email: e.target.value })}
                       className="input-premium w-full"
-                      placeholder="Enter sender email"
-                    />
+                    >
+                      <option value="">Select an email address</option>
+                      {emailAddresses.map((address) => (
+                        <option key={address.id} value={address.email}>
+                          {address.email} {address.status === 'Verified' ? '✓' : `(${address.status})`}
+                        </option>
+                      ))}
+                    </select>
+                    {emailAddresses.length === 0 && (
+                      <p className="text-amber-400 text-xs mt-1">
+                        No email addresses found. Please add an email address in Settings.
+                      </p>
+                    )}
                   </div>
                 </>
               ) : (

@@ -42,6 +42,22 @@ export default function DomainsSettings() {
   const submitVerification = async () => {
     if (!selectedDomain) return
 
+    // Validate business email if provided
+    if (businessEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(businessEmail)) {
+        alert('Please enter a valid email address')
+        return
+      }
+
+      // Check if email belongs to the domain
+      const emailDomain = businessEmail.split('@')[1]
+      if (emailDomain !== selectedDomain.domain) {
+        alert(`Business email must belong to the domain ${selectedDomain.domain}`)
+        return
+      }
+    }
+
     setVerifyingDomain(selectedDomain.id)
     try {
       const response = await fetch('/api/settings/domains/verify', {
@@ -61,7 +77,12 @@ export default function DomainsSettings() {
         setShowVerifyModal(false)
         setSelectedDomain(null)
         setBusinessEmail('')
-        alert('Domain verified successfully!')
+        
+        if (result.businessEmailSaved) {
+          alert('Domain verified successfully! Business email has been saved to your email settings.')
+        } else {
+          alert('Domain verified successfully!')
+        }
       } else {
         alert(result.error || 'Domain verification failed')
       }
@@ -73,11 +94,53 @@ export default function DomainsSettings() {
     }
   }
 
+  const validateDomain = (domain: string): { valid: boolean; error?: string } => {
+    // Remove protocol and www if present
+    let cleanDomain = domain.toLowerCase().trim()
+    cleanDomain = cleanDomain.replace(/^(https?:\/\/)?(www\.)?/, '')
+    cleanDomain = cleanDomain.replace(/\/$/, '') // Remove trailing slash
+    
+    // Basic domain format validation
+    const domainRegex = /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,}$/i
+    
+    if (!cleanDomain) {
+      return { valid: false, error: 'Domain cannot be empty' }
+    }
+    
+    if (!domainRegex.test(cleanDomain)) {
+      return { valid: false, error: 'Invalid domain format. Example: example.com' }
+    }
+    
+    // Check for common invalid patterns
+    if (cleanDomain.includes('..') || cleanDomain.startsWith('.') || cleanDomain.endsWith('.')) {
+      return { valid: false, error: 'Domain contains invalid characters' }
+    }
+    
+    // Check minimum length
+    if (cleanDomain.length < 4) {
+      return { valid: false, error: 'Domain is too short' }
+    }
+    
+    return { valid: true }
+  }
+
   const handleAddDomain = async () => {
     if (!newDomain.trim()) {
       alert('Please enter a domain')
       return
     }
+
+    // Validate domain format
+    const validation = validateDomain(newDomain)
+    if (!validation.valid) {
+      alert(validation.error || 'Invalid domain format')
+      return
+    }
+
+    // Clean the domain
+    let cleanDomain = newDomain.toLowerCase().trim()
+    cleanDomain = cleanDomain.replace(/^(https?:\/\/)?(www\.)?/, '')
+    cleanDomain = cleanDomain.replace(/\/$/, '')
 
     setAddingDomain(true)
     try {
@@ -85,7 +148,7 @@ export default function DomainsSettings() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          domain: newDomain.trim(),
+          domain: cleanDomain,
           type: domainType
         })
       })
@@ -263,8 +326,11 @@ export default function DomainsSettings() {
                   className="input-premium w-full"
                 />
                 <p className="text-xs text-white/50 mt-2">
-                  Enter your domain without http:// or www
+                  Enter your domain without http:// or www (e.g., example.com)
                 </p>
+                <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded text-xs text-blue-200">
+                  <strong>Note:</strong> Only valid domains will be accepted. The domain will be verified before you can use it.
+                </div>
               </div>
 
               <div>
@@ -318,13 +384,20 @@ export default function DomainsSettings() {
             </h3>
             
             <div className="space-y-4">
-              <div>
-                <p className="text-sm text-white/70 mb-4">
-                  Before verifying, please ensure you've configured the DNS records for your domain.
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                <p className="text-sm text-blue-200 mb-2">
+                  <strong>Before verifying:</strong>
                 </p>
-                
-                <label className="block text-sm font-medium text-white/70 mb-2">
-                  Business Email (Optional)
+                <ul className="text-xs text-blue-200 space-y-1 list-disc list-inside">
+                  <li>Ensure DNS records are configured for your domain</li>
+                  <li>DNS changes can take up to 48 hours to propagate</li>
+                  <li>Verification will check if your domain is properly set up</li>
+                </ul>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Business Email <span className="text-white/50">(Recommended)</span>
                 </label>
                 <input
                   type="email"
@@ -333,8 +406,13 @@ export default function DomainsSettings() {
                   placeholder={`e.g., contact@${selectedDomain.domain}`}
                   className="input-premium w-full"
                 />
+                <div className="mt-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded">
+                  <p className="text-xs text-emerald-200">
+                    <strong>✓ Auto-save feature:</strong> If you provide a business email, it will be automatically added to your verified sender addresses after domain verification.
+                  </p>
+                </div>
                 <p className="text-xs text-white/50 mt-2">
-                  Enter a business email address for this domain. It will be stored after verification.
+                  Enter a business email address for this domain (must use @{selectedDomain.domain})
                 </p>
               </div>
 

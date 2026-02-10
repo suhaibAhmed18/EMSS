@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authServer } from '@/lib/auth/server'
 import { getSupabaseAdmin } from '@/lib/database/client'
-import bcrypt from 'bcryptjs'
+import bcrypt from 'bcrypt'
 
 // PUT - Update user password
 export async function PUT(request: NextRequest) {

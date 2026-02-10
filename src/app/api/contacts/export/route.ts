@@ -43,11 +43,15 @@ export async function POST(request: NextRequest) {
     
     if (error) {
       console.error('Failed to fetch contacts:', error)
-      return NextResponse.json({ error: 'Failed to fetch contacts' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Failed to fetch contacts', 
+        details: error.message 
+      }, { status: 500 })
     }
 
     // Handle empty contacts
     if (!contacts || contacts.length === 0) {
+      console.log('No contacts found for export')
       const emptyContent = `First Name,Last Name,Email,Phone,Tags,Segments,Email Consent,SMS Consent,Total Spent,Order Count,Last Order Date,Shopify Customer ID,Created At,Updated At
 No contacts available,,,,,,,,,,,,,`
       
@@ -58,6 +62,8 @@ No contacts available,,,,,,,,,,,,,`
         }
       })
     }
+
+    console.log(`Exporting ${contacts.length} contacts`)
 
     // Generate CSV content with all contact fields
     const headers = [

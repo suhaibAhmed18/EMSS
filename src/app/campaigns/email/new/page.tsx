@@ -27,6 +27,7 @@ export default function NewEmailCampaignPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [showSavedTemplates, setShowSavedTemplates] = useState(false)
   const [savedTemplates, setSavedTemplates] = useState<EmailTemplate[]>([])
+  const [emailAddresses, setEmailAddresses] = useState<any[]>([])
   const [campaignData, setCampaignData] = useState({
     name: '',
     subject: '',
@@ -38,10 +39,11 @@ export default function NewEmailCampaignPage() {
   })
   const [isCreating, setIsCreating] = useState(false)
 
-  // Load saved templates
+  // Load saved templates and email addresses
   useEffect(() => {
     if (user) {
       loadSavedTemplates()
+      loadEmailAddresses()
     }
   }, [user])
 
@@ -56,6 +58,18 @@ export default function NewEmailCampaignPage() {
       }
     } catch (error) {
       console.error('Failed to load saved templates:', error)
+    }
+  }
+
+  const loadEmailAddresses = async () => {
+    try {
+      const response = await fetch('/api/settings/email-addresses')
+      if (response.ok) {
+        const data = await response.json()
+        setEmailAddresses(data.emailAddresses || [])
+      }
+    } catch (error) {
+      console.error('Failed to load email addresses:', error)
     }
   }
 
@@ -539,14 +553,26 @@ export default function NewEmailCampaignPage() {
                 <label className="block text-white/80 mb-2 font-medium">
                   Sender's Email Address <span className="text-red-400">*</span>
                 </label>
-                <input
-                  type="email"
+                <select
                   value={campaignData.senderEmail}
                   onChange={(e) => setCampaignData({ ...campaignData, senderEmail: e.target.value })}
-                  placeholder="noreply@yourstore.com"
                   className="input-premium w-full"
                   required
-                />
+                >
+                  <option value="">Select an email address</option>
+                  {emailAddresses
+                    .filter((address) => address.status === 'Verified')
+                    .map((address) => (
+                      <option key={address.id} value={address.email}>
+                        {address.email} ✓
+                      </option>
+                    ))}
+                </select>
+                {emailAddresses.filter((address) => address.status === 'Verified').length === 0 && (
+                  <p className="text-amber-400 text-sm mt-2">
+                    No verified email addresses found. Please add and verify an email address in Settings.
+                  </p>
+                )}
               </div>
 
               <Checkbox

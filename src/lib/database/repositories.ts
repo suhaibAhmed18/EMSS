@@ -129,15 +129,27 @@ export class ContactRepository extends ContactManager {
       ascending: false
     })
 
-    // Decrypt all contacts
+    // Decrypt all contacts - skip contacts that fail to decrypt instead of failing entire export
     if (result.data.length > 0) {
-      try {
-        result.data = await Promise.all(
-          result.data.map(contact => this.decryptContact(contact as any))
-        ) as any
-      } catch (error) {
-        return { data: [], error: error as Error }
+      const decryptedContacts: Contact[] = []
+      let failedCount = 0
+      
+      for (const contact of result.data) {
+        try {
+          const decrypted = await this.decryptContact(contact as any)
+          decryptedContacts.push(decrypted)
+        } catch (error) {
+          failedCount++
+          console.error(`Failed to decrypt contact ${(contact as any).id}:`, error)
+          // Skip this contact and continue with others
+        }
       }
+      
+      if (failedCount > 0) {
+        console.warn(`Skipped ${failedCount} contacts due to decryption errors`)
+      }
+      
+      result.data = decryptedContacts as any
     }
 
     return result as any

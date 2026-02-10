@@ -337,6 +337,35 @@ export class ShopifyStoreManager {
       throw new ShopifyError(`Failed to deactivate store: ${error}`)
     }
   }
+
+  /**
+   * Delete store and all associated data
+   * This will cascade delete all related data due to foreign key constraints
+   */
+  async deleteStore(storeId: string): Promise<void> {
+    const supabaseAdmin = getSupabaseAdmin()
+
+    try {
+      // Delete the store - this will cascade delete all related data
+      // due to ON DELETE CASCADE constraints in the database schema
+      const { error } = await (supabaseAdmin
+        .from('stores') as any)
+        .delete()
+        .eq('id', storeId)
+
+      if (error) {
+        throw new ShopifyError(`Failed to delete store: ${error.message}`)
+      }
+
+      console.log(`Store ${storeId} and all associated data deleted successfully`)
+    } catch (error) {
+      console.error('Error deleting store:', error)
+      if (error instanceof ShopifyError) {
+        throw error
+      }
+      throw new ShopifyError(`Failed to delete store: ${error}`)
+    }
+  }
 }
 
 export const shopifyStoreManager = new ShopifyStoreManager()

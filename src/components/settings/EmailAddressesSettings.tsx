@@ -71,9 +71,14 @@ export default function EmailAddressesSettings() {
       
       if (response.ok) {
         await loadEmailAddresses()
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to delete email:', errorData)
+        alert(`Failed to delete email: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Failed to delete email:', error)
+      alert('Failed to delete email address')
     }
   }
 

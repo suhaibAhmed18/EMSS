@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useRequireAuth } from '@/lib/auth/session'
 import CampaignWizard from '@/components/campaigns/CampaignWizard'
@@ -37,18 +37,25 @@ const TRIGGERS: AutomationTrigger[] = [
     category: 'cart'
   },
   {
-    id: 'order_placed',
-    name: 'Order Placed',
-    description: 'Trigger when a customer completes an order',
+    id: 'order_created',
+    name: 'Order Created',
+    description: 'Trigger when a customer creates an order',
     icon: DollarSign,
     category: 'order'
   },
   {
-    id: 'email_opened',
-    name: 'Email Opened',
-    description: 'Trigger when a customer opens an email',
-    icon: Mail,
-    category: 'engagement'
+    id: 'order_paid',
+    name: 'Order Paid',
+    description: 'Trigger when a customer pays for an order',
+    icon: DollarSign,
+    category: 'order'
+  },
+  {
+    id: 'customer_updated',
+    name: 'Customer Updated',
+    description: 'Trigger when customer information changes',
+    icon: UserPlus,
+    category: 'customer'
   }
 ]
 
@@ -57,13 +64,24 @@ export default function CreateAutomationPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedTrigger, setSelectedTrigger] = useState<AutomationTrigger | null>(null)
+  const [storeId, setStoreId] = useState<string | null>(null)
   const [automationData, setAutomationData] = useState({
     name: '',
     description: '',
     actionType: 'send_email',
     actionConfig: {
       delay: 0,
-      delayUnit: 'minutes'
+      delayUnit: 'minutes',
+      // Email config
+      subject: '',
+      htmlContent: '',
+      fromEmail: '',
+      fromName: '',
+      // SMS config
+      message: '',
+      fromNumber: '',
+      // Tag config
+      tags: []
     }
   })
 
@@ -80,18 +98,52 @@ export default function CreateAutomationPage() {
   }
 
   const handleCreateAutomation = async () => {
+    if (!storeId) {
+      alert('No store found. Please connect a Shopify store first.')
+      return
+    }
+
     try {
+      // Build action config based on action type
+      let actionConfig: any = {}
+      
+      if (automationData.actionType === 'send_email') {
+        actionConfig = {
+          subject: automationData.actionConfig.subject,
+          htmlContent: automationData.actionConfig.htmlContent,
+          fromEmail: automationData.actionConfig.fromEmail || 'noreply@yourstore.com',
+          fromName: automationData.actionConfig.fromName || 'Your Store'
+        }
+      } else if (automationData.actionType === 'send_sms') {
+        actionConfig = {
+          message: automationData.actionConfig.message,
+          fromNumber: automationData.actionConfig.fromNumber
+        }
+      } else if (automationData.actionType === 'add_tag') {
+        actionConfig = {
+          tags: automationData.actionConfig.tags
+        }
+      } else if (automationData.actionType === 'delay') {
+        actionConfig = {
+          duration: automationData.actionConfig.delay,
+          unit: automationData.actionConfig.delayUnit
+        }
+      }
+
       const response = await fetch('/api/automations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          store_id: storeId,
           name: automationData.name,
           description: automationData.description,
           trigger_type: selectedTrigger?.id,
           trigger_config: {},
           actions: [{
+            id: `action_${Date.now()}`,
             type: automationData.actionType,
-            config: automationData.actionConfig
+            config: actionConfig,
+            delay: automationData.actionConfig.delay
           }],
           conditions: [],
           is_active: false
@@ -101,9 +153,14 @@ export default function CreateAutomationPage() {
       if (response.ok) {
         const data = await response.json()
         router.push(`/automations/${data.automation.id}/edit`)
+      } else {
+        const error = await response.json()
+        console.error('Failed to create automation:', error)
+        alert(`Failed to create automation: ${error.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Failed to create automation:', error)
+      alert('Failed to create automation. Please try again.')
     }
   }
 
@@ -111,11 +168,45 @@ export default function CreateAutomationPage() {
     switch (currentStep) {
       case 0: return true
       case 1: return selectedTrigger !== null
-      case 2: return automationData.name && automationData.actionType
+      case 2: {
+        if (!automationData.name || !automationData.actionType) return false
+        // Validate action-specific required fields
+        if (automationData.actionType === 'send_email') {
+          return !!(automationData.actionConfig.subject && automationData.actionConfig.htmlContent)
+        }
+        if (automationData.actionType === 'send_sms') {
+          return !!(automationData.actionConfig.message && automationData.actionConfig.fromNumber)
+        }
+        if (automationData.actionType === 'add_tag') {
+          return !!(automationData.actionConfig.tags && automationData.actionConfig.tags.length > 0)
+        }
+        return true
+      }
       case 3: return true
       default: return false
     }
   }
+
+  // Fetch user's store on mount
+  useEffect(() => {
+    const fetchStore = async () => {
+      if (!user) return
+      
+      try {
+        const response = await fetch('/api/stores')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.stores && data.stores.length > 0) {
+            setStoreId(data.stores[0].id)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch store:', error)
+      }
+    }
+    
+    fetchStore()
+  }, [user])
 
   if (loading) {
     return <div className="animate-pulse">Loading...</div>
@@ -275,9 +366,132 @@ export default function CreateAutomationPage() {
                   <option value="send_email">Send Email</option>
                   <option value="send_sms">Send SMS</option>
                   <option value="add_tag">Add Tag</option>
-                  <option value="wait">Wait</option>
+                  <option value="delay">Delay</option>
                 </select>
               </div>
+
+              {/* Email Configuration */}
+              {automationData.actionType === 'send_email' && (
+                <div className="space-y-4 p-4 rounded-xl border border-white/10 bg-white/[0.02]">
+                  <h4 className="text-white font-semibold">Email Settings</h4>
+                  <div>
+                    <label className="block text-white/80 mb-2 text-sm">Subject Line</label>
+                    <input
+                      type="text"
+                      value={automationData.actionConfig.subject}
+                      onChange={(e) => setAutomationData({
+                        ...automationData,
+                        actionConfig: { ...automationData.actionConfig, subject: e.target.value }
+                      })}
+                      placeholder="Welcome to our store!"
+                      className="input-premium w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white/80 mb-2 text-sm">Email Content</label>
+                    <textarea
+                      value={automationData.actionConfig.htmlContent}
+                      onChange={(e) => setAutomationData({
+                        ...automationData,
+                        actionConfig: { ...automationData.actionConfig, htmlContent: e.target.value }
+                      })}
+                      placeholder="Hi {{customer.first_name}}, welcome to our store!"
+                      rows={4}
+                      className="input-premium w-full resize-none"
+                    />
+                    <p className="text-white/40 text-xs mt-1">Use {`{{customer.first_name}}`}, {`{{customer.email}}`}, etc. for personalization</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-white/80 mb-2 text-sm">From Name</label>
+                      <input
+                        type="text"
+                        value={automationData.actionConfig.fromName}
+                        onChange={(e) => setAutomationData({
+                          ...automationData,
+                          actionConfig: { ...automationData.actionConfig, fromName: e.target.value }
+                        })}
+                        placeholder="Your Store"
+                        className="input-premium w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-white/80 mb-2 text-sm">From Email</label>
+                      <input
+                        type="email"
+                        value={automationData.actionConfig.fromEmail}
+                        onChange={(e) => setAutomationData({
+                          ...automationData,
+                          actionConfig: { ...automationData.actionConfig, fromEmail: e.target.value }
+                        })}
+                        placeholder="hello@yourstore.com"
+                        className="input-premium w-full"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SMS Configuration */}
+              {automationData.actionType === 'send_sms' && (
+                <div className="space-y-4 p-4 rounded-xl border border-white/10 bg-white/[0.02]">
+                  <h4 className="text-white font-semibold">SMS Settings</h4>
+                  <div>
+                    <label className="block text-white/80 mb-2 text-sm">Message</label>
+                    <textarea
+                      value={automationData.actionConfig.message}
+                      onChange={(e) => setAutomationData({
+                        ...automationData,
+                        actionConfig: { ...automationData.actionConfig, message: e.target.value }
+                      })}
+                      placeholder="Hi {{customer.first_name}}, thanks for your order!"
+                      rows={3}
+                      className="input-premium w-full resize-none"
+                      maxLength={160}
+                    />
+                    <p className="text-white/40 text-xs mt-1">
+                      {automationData.actionConfig.message?.length || 0}/160 characters
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-white/80 mb-2 text-sm">From Number</label>
+                    <input
+                      type="tel"
+                      value={automationData.actionConfig.fromNumber}
+                      onChange={(e) => setAutomationData({
+                        ...automationData,
+                        actionConfig: { ...automationData.actionConfig, fromNumber: e.target.value }
+                      })}
+                      placeholder="+1234567890"
+                      className="input-premium w-full"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Tag Configuration */}
+              {automationData.actionType === 'add_tag' && (
+                <div className="space-y-4 p-4 rounded-xl border border-white/10 bg-white/[0.02]">
+                  <h4 className="text-white font-semibold">Tag Settings</h4>
+                  <div>
+                    <label className="block text-white/80 mb-2 text-sm">Tags (comma-separated)</label>
+                    <input
+                      type="text"
+                      value={automationData.actionConfig.tags?.join(', ') || ''}
+                      onChange={(e) => setAutomationData({
+                        ...automationData,
+                        actionConfig: { 
+                          ...automationData.actionConfig, 
+                          tags: e.target.value.split(',').map(t => t.trim()).filter(t => t)
+                        }
+                      })}
+                      placeholder="vip, new-customer, high-value"
+                      className="input-premium w-full"
+                    />
+                    <p className="text-white/40 text-xs mt-1">Enter tags separated by commas</p>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-white/80 mb-2 font-medium">Delay</label>
