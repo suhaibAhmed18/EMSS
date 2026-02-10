@@ -7,6 +7,7 @@ import CampaignWizard from '@/components/campaigns/CampaignWizard'
 import EmailBuilder from '@/components/campaigns/EmailBuilder'
 import { emailTemplates, EmailTemplate } from '@/lib/templates/email-templates'
 import { Mail, Check, Sparkles, Zap, Target, Eye, Edit, Search, Plus } from 'lucide-react'
+import Checkbox from '@/components/ui/Checkbox'
 
 const WIZARD_STEPS = [
   { id: 'intro', title: 'Introduction', description: 'Learn about email campaigns' },
@@ -35,6 +36,7 @@ export default function NewEmailCampaignPage() {
     replyTo: '',
     segmentId: ''
   })
+  const [isCreating, setIsCreating] = useState(false)
 
   // Load saved templates
   useEffect(() => {
@@ -75,7 +77,9 @@ export default function NewEmailCampaignPage() {
   const handleNext = async () => {
     if (currentStep === WIZARD_STEPS.length - 1) {
       // Final step - create campaign
+      setIsCreating(true)
       await handleCreateCampaign()
+      setIsCreating(false)
     } else {
       // Auto-select "Start from Scratch" when moving from intro to template selection
       if (currentStep === 0 && !selectedTemplate) {
@@ -91,25 +95,49 @@ export default function NewEmailCampaignPage() {
 
   const handleCreateCampaign = async () => {
     try {
+      // Get user's store
+      const storesResponse = await fetch('/api/stores')
+      if (!storesResponse.ok) {
+        alert('Failed to get store information')
+        return
+      }
+      
+      const storesData = await storesResponse.json()
+      const stores = storesData.stores || []
+      
+      if (stores.length === 0) {
+        alert('No store found. Please connect a store first.')
+        return
+      }
+      
+      const store = stores[0] // Use first store
+      
       const response = await fetch('/api/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'email',
-          name: campaignData.name,
+          store_id: store.id,
+          name: campaignData.name || 'Untitled Campaign',
           subject: campaignData.subject,
-          message: customizedHtml,
-          status: 'draft',
-          template_id: selectedTemplate?.id
+          html_content: customizedHtml,
+          text_content: campaignData.preheader || '',
+          from_email: campaignData.senderEmail || user?.email || 'noreply@example.com',
+          from_name: campaignData.senderName || 'Your Store',
+          status: 'draft'
         })
       })
 
       if (response.ok) {
         const data = await response.json()
-        router.push(`/campaigns/email/${data.campaign.id}/edit`)
+        router.push(`/campaigns`)
+      } else {
+        const errorData = await response.json()
+        alert(`Failed to create campaign: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Failed to create campaign:', error)
+      alert('Failed to create campaign. Please try again.')
     }
   }
 
@@ -118,7 +146,14 @@ export default function NewEmailCampaignPage() {
       case 0: return true // Intro
       case 1: return true // Template step - will auto-select "Start from Scratch" if none selected
       case 2: return true // Template customized (builder handles this)
-      case 3: return campaignData.name && campaignData.subject // Details filled
+      case 3: 
+        // Details filled - require name, subject, sender name, and sender email
+        return !!(
+          campaignData.name && 
+          campaignData.subject && 
+          campaignData.senderName && 
+          campaignData.senderEmail
+        )
       case 4: return true // Review
       default: return false
     }
@@ -141,8 +176,8 @@ export default function NewEmailCampaignPage() {
         onStepChange={setCurrentStep}
         onNext={handleNext}
         onPrevious={handlePrevious}
-        canGoNext={canGoNext()}
-        canGoPrevious={currentStep > 0}
+        canGoNext={canGoNext() && !isCreating}
+        canGoPrevious={currentStep > 0 && !isCreating}
       >
         {/* Step 1: Introduction */}
         {currentStep === 0 && (
@@ -303,7 +338,10 @@ export default function NewEmailCampaignPage() {
                     key={template.id}
                     onClick={() => {
                       setSelectedTemplate(template)
-                      setCustomizedHtml(template.html)
+                      // Only set the HTML if switching to a different template or if no customized HTML exists
+                      if (selectedTemplate?.id !== template.id || !customizedHtml) {
+                        setCustomizedHtml(template.html)
+                      }
                     }}
                     className={`w-full text-left p-4 rounded-2xl border transition-all ${
                       selectedTemplate?.id === template.id
@@ -401,7 +439,7 @@ export default function NewEmailCampaignPage() {
             </div>
 
             <EmailBuilder
-              initialHtml={selectedTemplate.html}
+              initialHtml={customizedHtml || selectedTemplate.html}
               onSave={(blocks, html) => {
                 setCustomizedHtml(html)
               }}
@@ -443,25 +481,31 @@ export default function NewEmailCampaignPage() {
             
             <div className="space-y-6 max-w-2xl">
               <div>
-                <label className="block text-white/80 mb-2 font-medium">Campaign Name</label>
+                <label className="block text-white/80 mb-2 font-medium">
+                  Campaign Name <span className="text-red-400">*</span>
+                </label>
                 <input
                   type="text"
                   value={campaignData.name}
                   onChange={(e) => setCampaignData({ ...campaignData, name: e.target.value })}
-                  placeholder="Optional campaign name for internal use"
+                  placeholder="e.g., Summer Sale 2024"
                   className="input-premium w-full"
+                  required
                 />
                 <p className="text-white/40 text-sm mt-1">For internal tracking only</p>
               </div>
 
               <div>
-                <label className="block text-white/80 mb-2 font-medium">Subject Line</label>
+                <label className="block text-white/80 mb-2 font-medium">
+                  Subject Line <span className="text-red-400">*</span>
+                </label>
                 <input
                   type="text"
                   value={campaignData.subject}
                   onChange={(e) => setCampaignData({ ...campaignData, subject: e.target.value })}
                   placeholder={selectedTemplate?.subject || 'Enter email subject'}
                   className="input-premium w-full"
+                  required
                 />
               </div>
 
@@ -478,33 +522,37 @@ export default function NewEmailCampaignPage() {
               </div>
 
               <div>
-                <label className="block text-white/80 mb-2 font-medium">Sender's Name</label>
+                <label className="block text-white/80 mb-2 font-medium">
+                  Sender's Name <span className="text-red-400">*</span>
+                </label>
                 <input
                   type="text"
                   value={campaignData.senderName}
                   onChange={(e) => setCampaignData({ ...campaignData, senderName: e.target.value })}
                   placeholder="Your Store Name"
                   className="input-premium w-full"
+                  required
                 />
               </div>
 
               <div>
-                <label className="block text-white/80 mb-2 font-medium">Sender's Email Address</label>
+                <label className="block text-white/80 mb-2 font-medium">
+                  Sender's Email Address <span className="text-red-400">*</span>
+                </label>
                 <input
                   type="email"
                   value={campaignData.senderEmail}
                   onChange={(e) => setCampaignData({ ...campaignData, senderEmail: e.target.value })}
                   placeholder="noreply@yourstore.com"
                   className="input-premium w-full"
+                  required
                 />
               </div>
 
-              <div className="flex items-center gap-3">
-                <input type="checkbox" id="replyTo" className="rounded border-white/20 bg-white/10 text-[color:var(--accent-hi)] focus:ring-[color:var(--accent-hi)] focus:ring-offset-0 checked:bg-[color:var(--accent-hi)] checked:border-[color:var(--accent-hi)]" />
-                <label htmlFor="replyTo" className="text-white/80">
-                  Receive replies to a different email address
-                </label>
-              </div>
+              <Checkbox
+                id="replyTo"
+                label="Receive replies to a different email address"
+              />
             </div>
           </div>
         )}

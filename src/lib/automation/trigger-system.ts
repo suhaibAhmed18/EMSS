@@ -175,37 +175,13 @@ export class WorkflowTriggerSystem {
       errors.push('Trigger type is required')
     }
 
-    // All trigger types that are currently supported
-    // Only include triggers that have webhook handlers or can be manually triggered
     const validTriggerTypes = [
-      // Shopify webhook triggers (fully implemented)
-      'order_created',      // orders/create webhook
-      'order_paid',         // orders/paid webhook
-      'order_updated',      // orders/updated webhook
-      'customer_created',   // customers/create webhook
-      'customer_updated',   // customers/update webhook
-      
-      // Additional triggers (require implementation)
-      'cart_abandoned',     // Requires checkout tracking
-      'order_refunded',
-      'ordered_product',
-      'paid_for_order',
-      'placed_order',
-      'product_back_in_stock',
-      'special_occasion_birthday',
-      'started_checkout',
-      'customer_subscribed',
-      'viewed_page',
-      'viewed_product',
-      'clicked_message',
-      'entered_segment',
-      'exited_segment',
-      'marked_message_as_spam',
-      'message_delivery_failed',
-      'message_sent',
-      'opened_message',
-      'order_canceled',
-      'order_fulfilled'
+      'order_created', 
+      'order_paid', 
+      'order_updated', 
+      'customer_created', 
+      'customer_updated', 
+      'cart_abandoned'
     ]
 
     if (trigger.type && !validTriggerTypes.includes(trigger.type)) {

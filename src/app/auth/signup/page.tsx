@@ -13,6 +13,7 @@ import {
   CheckCircle,
   ShoppingBag
 } from 'lucide-react'
+import Checkbox from '@/components/ui/Checkbox'
 
 export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -54,10 +55,10 @@ export default function SignUpPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
+          firstName: formData.firstName,
+          lastName: formData.lastName,
           email: formData.email, 
-          password: formData.password,
-          name: formData.firstName,
-          lastname: formData.lastName
+          password: formData.password
         }),
       })
 
@@ -211,13 +212,12 @@ export default function SignUpPage() {
             </div>
 
             <div className="flex items-center">
-              <input
-                type="checkbox"
+              <Checkbox
                 name="agreeToTerms"
                 checked={formData.agreeToTerms}
                 onChange={handleInputChange}
-                className="rounded border-gray-600 bg-gray-700 text-white focus:ring-white mr-3"
                 required
+                className="mr-3"
               />
               <label className="text-sm text-gray-400">
                 I agree to the{' '}

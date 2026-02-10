@@ -71,6 +71,27 @@ export async function GET(request: NextRequest) {
       dashboardData.topAutomations.forEach(automation => {
         csvRows.push(`"${automation.name}",${automation.type},${automation.status},${automation.triggers},${automation.revenue}`)
       })
+      csvRows.push('')
+    }
+
+    // Historical Data
+    if (dashboardData.historicalData) {
+      csvRows.push('Historical Trends')
+      csvRows.push('Metric,Change (%)')
+      csvRows.push(`Revenue Change,${dashboardData.historicalData.revenueChange.toFixed(2)}`)
+      csvRows.push(`Contacts Change,${dashboardData.historicalData.contactsChange.toFixed(2)}`)
+      csvRows.push(`Campaigns Change,${dashboardData.historicalData.campaignsChange.toFixed(2)}`)
+      csvRows.push(`Messages Change,${dashboardData.historicalData.messagesChange.toFixed(2)}`)
+      csvRows.push('')
+    }
+
+    // Revenue History
+    if (dashboardData.revenueHistory && dashboardData.revenueHistory.length > 0) {
+      csvRows.push('Revenue History')
+      csvRows.push('Date,Revenue')
+      dashboardData.revenueHistory.forEach(entry => {
+        csvRows.push(`${entry.date},${entry.revenue}`)
+      })
     }
 
     const csvContent = csvRows.join('\n')

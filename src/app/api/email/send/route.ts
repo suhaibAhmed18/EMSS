@@ -1,40 +1,40 @@
-// API route for sending emails
 import { NextRequest, NextResponse } from 'next/server'
-import { emailService } from '@/lib/email'
-import { getSupabaseAdmin } from '@/lib/database/client'
-import { authServer } from '@/lib/auth/server'
-import { domainManager } from '@/lib/email/domain-manager'
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await authServer.getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { to, subject, html, from_name, from_email } = await request.json()
+
+    if (!to || !subject || !html) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const { campaignId, recipientIds } = await request.json()
-    
-    if (!campaignId) {
-      return NextResponse.json({ error: 'Campaign ID is required' }, { status: 400 })
-    }
+    const fromAddress = from_email || process.env.EMAIL_FROM_ADDRESS || 'onboarding@resend.dev'
+    const fromName = from_name || process.env.EMAIL_FROM_NAME || 'MarketingPro'
 
-    // Mock email sending for now
-    const mockResult = {
-      success: Math.floor(Math.random() * 100) + 50,
-      failed: Math.floor(Math.random() * 10),
-      total: Math.floor(Math.random() * 110) + 50
-    }
-
-    return NextResponse.json({
-      success: true,
-      sent: mockResult.success,
-      failed: mockResult.failed,
-      total: mockResult.total
+    const { data, error } = await resend.emails.send({
+      from: `${fromName} <${fromAddress}>`,
+      to: [to],
+      subject: subject,
+      html: html
     })
+
+    if (error) {
+      console.error('Resend error:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      messageId: data?.id 
+    })
+
   } catch (error) {
-    console.error('Send email error:', error)
+    console.error('Email send error:', error)
     return NextResponse.json(
-      { error: 'Failed to send email campaign' },
+      { error: 'Failed to send email' },
       { status: 500 }
     )
   }

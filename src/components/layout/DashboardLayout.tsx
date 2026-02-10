@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession } from '@/lib/auth/session'
-import { ScopeVerificationBanner } from '@/components/shopify/ScopeVerificationBanner'
 import {
   BarChart3,
   LogOut,
@@ -267,10 +266,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </header>
 
           <main className="flex-1 py-6">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <ScopeVerificationBanner />
-              {children}
-            </div>
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">{children}</div>
           </main>
         </div>
       </div>

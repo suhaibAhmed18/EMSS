@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { AlertTriangle, Info, Smartphone } from 'lucide-react'
+import Checkbox from '@/components/ui/Checkbox'
 
 interface SMSMessageMetadata {
   characterCount: number
@@ -73,18 +74,12 @@ export default function SMSCampaignBuilder({
             </p>
           </div>
 
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="includeOptOut"
-              checked={includeOptOut}
-              onChange={(e) => setIncludeOptOut(e.target.checked)}
-              className="rounded border-white/20 bg-white/10 text-[color:var(--accent-hi)] focus:ring-[color:var(--accent-hi)] focus:ring-offset-0 checked:bg-[color:var(--accent-hi)] checked:border-[color:var(--accent-hi)] mr-3"
-            />
-            <label htmlFor="includeOptOut" className="text-white/80">
-              Automatically include opt-out instructions (Reply STOP to opt out)
-            </label>
-          </div>
+          <Checkbox
+            id="includeOptOut"
+            label="Automatically include opt-out instructions (Reply STOP to opt out)"
+            checked={includeOptOut}
+            onChange={(e) => setIncludeOptOut(e.target.checked)}
+          />
         </div>
       </div>
 

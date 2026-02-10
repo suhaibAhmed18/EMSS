@@ -3,7 +3,6 @@ import { shopifyOAuth } from './oauth'
 import { multiStoreManager } from '@/lib/stores/multi-store-manager'
 import type { ShopifyOAuthCallbackParams, ShopifyStore } from './types'
 import { OAuthError, ShopifyError } from './types'
-import { ScopeVerifier } from './scope-verifier'
 
 export class ShopifyStoreManager {
   /**
@@ -55,16 +54,6 @@ export class ShopifyStoreManager {
       // If we have a user, associate them with the store
       if (userId && userId !== 'anonymous') {
         await multiStoreManager.addUserToStore(userId, store.id, 'admin')
-      }
-
-      // Verify that all required scopes were granted
-      const scopeResult = ScopeVerifier.hasRequiredScopes(tokenData.scope)
-      if (!scopeResult.hasAllScopes) {
-        console.warn(
-          `Store ${params.shop} is missing required scopes:`,
-          scopeResult.missingScopes
-        )
-        // Store is created but user will be prompted to reauthorize
       }
 
       return store
@@ -346,66 +335,6 @@ export class ShopifyStoreManager {
         throw error
       }
       throw new ShopifyError(`Failed to deactivate store: ${error}`)
-    }
-  }
-  /**
-   * Permanently delete store and all associated data
-   */
-  async deleteStore(storeId: string): Promise<void> {
-    const supabaseAdmin = getSupabaseAdmin()
-
-    try {
-      // Get store info before deletion for logging
-      const { data: store } = await (supabaseAdmin
-        .from('stores') as any)
-        .select('shop_domain')
-        .eq('id', storeId)
-        .single()
-
-      console.log(`Permanently deleting store ${storeId} (${store?.shop_domain})`)
-
-      // Delete all associated data in order (respecting foreign key constraints)
-      // 1. Delete user_stores associations
-      await supabaseAdmin
-        .from('user_stores')
-        .delete()
-        .eq('store_id', storeId)
-
-      // 2. Delete contacts associated with this store
-      await (supabaseAdmin
-        .from('contacts') as any)
-        .delete()
-        .eq('store_id', storeId)
-
-      // 3. Delete campaigns associated with this store
-      await (supabaseAdmin
-        .from('campaigns') as any)
-        .delete()
-        .eq('store_id', storeId)
-
-      // 4. Delete automations associated with this store
-      await (supabaseAdmin
-        .from('automations') as any)
-        .delete()
-        .eq('store_id', storeId)
-
-      // 5. Finally, delete the store itself
-      const { error } = await (supabaseAdmin
-        .from('stores') as any)
-        .delete()
-        .eq('id', storeId)
-
-      if (error) {
-        throw new ShopifyError(`Failed to delete store: ${error.message}`)
-      }
-
-      console.log(`Store ${storeId} and all associated data permanently deleted`)
-    } catch (error) {
-      console.error('Error deleting store:', error)
-      if (error instanceof ShopifyError) {
-        throw error
-      }
-      throw new ShopifyError(`Failed to delete store: ${error}`)
     }
   }
 }

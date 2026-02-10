@@ -20,12 +20,12 @@ export async function POST() {
 
     const store = stores[0] // Use first store
 
-    // Permanently delete store and all associated data
-    await shopifyStoreManager.deleteStore(store.id)
+    // Disconnect store
+    await shopifyStoreManager.deactivateStore(store.id)
 
     return NextResponse.json({ 
       success: true,
-      message: 'Store and all associated data permanently deleted' 
+      message: 'Store disconnected successfully' 
     })
   } catch (error) {
     console.error('Store disconnection error:', error)

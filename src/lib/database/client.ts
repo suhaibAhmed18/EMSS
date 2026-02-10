@@ -2,39 +2,15 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import type { Database } from './supabase-types'
 import type {
-  Store,
-  CreateStore,
-  UpdateStore,
   Contact,
   CreateContact,
-  UpdateContact,
-  EmailCampaign,
-  CreateEmailCampaign,
-  UpdateEmailCampaign,
-  SMSCampaign,
-  CreateSMSCampaign,
-  UpdateSMSCampaign,
-  CampaignTemplate,
-  CreateCampaignTemplate,
-  UpdateCampaignTemplate,
-  AutomationWorkflow,
-  CreateAutomationWorkflow,
-  UpdateAutomationWorkflow,
-  ConsentRecord,
-  CreateConsentRecord,
-  CampaignSend,
-  CreateCampaignSend,
-  UpdateCampaignSend,
-  ShopifyOrder,
-  CreateShopifyOrder,
-  UpdateShopifyOrder,
-  ShopifyProduct,
-  CreateShopifyProduct,
-  UpdateShopifyProduct,
-  WebhookEvent,
-  CreateWebhookEvent,
-  UpdateWebhookEvent,
 } from './types'
+import type { 
+  DatabaseResult, 
+  DatabaseListResult,
+  JsonObject,
+  EncryptedData 
+} from './type-helpers'
 
 // Type for the Supabase client with explicit Database typing
 export type TypedSupabaseClient = SupabaseClient<Database>
@@ -148,7 +124,7 @@ export interface DatabaseListResult<T> {
 
 // Generic database operations with validation
 export class TypedDatabaseClient {
-  constructor(private supabase: any) {} // Cast to any to avoid complex type issues
+  constructor(private supabase: TypedSupabaseClient) {}
 
   async create<T extends keyof Database['public']['Tables']>(
     table: T,

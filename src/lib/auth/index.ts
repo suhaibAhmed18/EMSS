@@ -8,8 +8,3 @@ export * from './session'
 export { authClient } from './client'
 export { authServer } from './server'
 export { SessionProvider, useSession, useRequireAuth } from './session'
-
-// Backward compatibility alias
-export async function getServerSession() {
-  return authServer.getCurrentUser()
-}

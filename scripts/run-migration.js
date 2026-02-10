@@ -17,47 +17,41 @@ const supabase = createClient(supabaseUrl, serviceRoleKey)
 
 async function runMigration() {
   try {
-    console.log('🚀 Running users table migration...')
+    // Get SQL file path from command line argument
+    const sqlFilePath = process.argv[2]
+    
+    if (!sqlFilePath) {
+      console.error('❌ Please provide a SQL file path')
+      console.log('Usage: node scripts/run-migration.js <path-to-sql-file>')
+      console.log('Example: node scripts/run-migration.js scripts/add-stripe-subscription-field.sql')
+      process.exit(1)
+    }
+    
+    const fullPath = path.resolve(sqlFilePath)
+    
+    if (!fs.existsSync(fullPath)) {
+      console.error(`❌ SQL file not found: ${fullPath}`)
+      process.exit(1)
+    }
+    
+    console.log(`🚀 Running migration: ${path.basename(sqlFilePath)}...`)
     
     // Read the migration file
-    const migrationPath = path.join(__dirname, '..', 'supabase', 'migrations', '002_users_table.sql')
-    const migrationSQL = fs.readFileSync(migrationPath, 'utf8')
+    const migrationSQL = fs.readFileSync(fullPath, 'utf8')
     
-    // Execute the migration
-    const { error } = await supabase.rpc('exec_sql', { sql: migrationSQL })
+    console.log('📄 SQL to execute:')
+    console.log(migrationSQL)
+    console.log('')
+    
+    // Execute the migration using raw SQL
+    const { data, error } = await supabase.rpc('exec_sql', { sql: migrationSQL })
     
     if (error) {
       console.error('❌ Migration failed:', error)
       process.exit(1)
     }
     
-    console.log('✅ Users table migration completed successfully!')
-    
-    // Test the table by creating a test user
-    console.log('🧪 Testing users table...')
-    
-    const testUser = {
-      id: '550e8400-e29b-41d4-a716-446655440000',
-      email: 'test@example.com',
-      name: 'Test User',
-      password_hash: 'test_hash',
-      email_verified: true
-    }
-    
-    const { data, error: insertError } = await supabase
-      .from('users')
-      .insert(testUser)
-      .select()
-    
-    if (insertError) {
-      console.error('❌ Test insert failed:', insertError)
-    } else {
-      console.log('✅ Test user created successfully:', data)
-      
-      // Clean up test user
-      await supabase.from('users').delete().eq('id', testUser.id)
-      console.log('🧹 Test user cleaned up')
-    }
+    console.log('✅ Migration completed successfully!')
     
   } catch (error) {
     console.error('❌ Migration error:', error)

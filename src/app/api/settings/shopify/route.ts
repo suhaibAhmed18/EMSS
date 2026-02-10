@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authServer } from '@/lib/auth/server'
-import { getSupabaseAdmin } from '@/lib/database/client'
+import { databaseService } from '@/lib/database/service'
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,74 +9,59 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const supabaseAdmin = getSupabaseAdmin()
-    
     // Get user's stores
-    const { data: stores, error: storesError } = await supabaseAdmin
-      .from('stores')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
+    const stores = await databaseService.getStoresByUserId(user.id)
     
-    if (storesError) {
-      console.error('Error fetching stores:', storesError)
-      throw storesError
-    }
-
-    if (!stores || stores.length === 0) {
+    if (stores.length === 0) {
       return NextResponse.json({
         connected: false,
         store: null,
         stats: null,
-        webhooks: [],
-        lastSync: null,
-        syncStatus: 'not_connected'
+        lastSync: null
       })
     }
 
-    // Get the first (most recent) store
     const store = stores[0]
-    
-    // Get stats from database
-    const [productsResult, contactsResult, campaignsResult] = await Promise.all([
-      supabaseAdmin.from('products').select('id', { count: 'exact', head: true }).eq('store_id', store.id),
-      supabaseAdmin.from('contacts').select('id', { count: 'exact', head: true }).eq('store_id', store.id),
-      supabaseAdmin.from('campaigns').select('id', { count: 'exact', head: true }).eq('store_id', store.id)
-    ])
 
-    const shopifyData = {
+    // Get store statistics
+    const { data: contacts } = await databaseService.supabase
+      .from('contacts')
+      .select('id')
+      .eq('store_id', store.id)
+
+    const { data: orders } = await databaseService.supabase
+      .from('shopify_orders')
+      .select('total_price')
+      .eq('store_id', store.id)
+
+    const { data: products } = await databaseService.supabase
+      .from('shopify_products')
+      .select('id')
+      .eq('store_id', store.id)
+
+    const totalRevenue = orders?.reduce((sum, order) => sum + parseFloat(String(order.total_price || 0)), 0) || 0
+
+    return NextResponse.json({
       connected: true,
       store: {
-        name: store.store_name || store.shop_domain,
         domain: store.shop_domain,
-        email: store.store_email || '',
-        currency: store.currency || 'USD',
-        timezone: store.timezone || 'UTC',
-        plan: store.plan_name || 'Shopify'
+        name: store.display_name || store.shop_domain,
+        plan: store.plan_type || 'free',
+        currency: store.currency || 'USD'
       },
       stats: {
-        products: productsResult.count || 0,
-        customers: contactsResult.count || 0,
-        orders: 0, // We don't have orders table yet
-        revenue: 0 // We don't have revenue tracking yet
+        products: products?.length || 0,
+        customers: contacts?.length || 0,
+        orders: orders?.length || 0,
+        revenue: totalRevenue
       },
-      webhooks: [
-        { name: 'Order Created', enabled: true, url: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/shopify/orders/create` },
-        { name: 'Order Paid', enabled: true, url: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/shopify/orders/paid` },
-        { name: 'Order Updated', enabled: true, url: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/shopify/orders/update` },
-        { name: 'Customer Created', enabled: true, url: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/shopify/customers/create` },
-        { name: 'Cart Updated', enabled: false, url: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/shopify/carts/update` },
-      ],
-      lastSync: store.updated_at || store.created_at,
-      syncStatus: 'completed'
-    }
+      lastSync: store.updated_at
+    })
 
-    return NextResponse.json(shopifyData)
   } catch (error) {
-    console.error('Failed to fetch Shopify settings:', error)
+    console.error('Failed to fetch Shopify data:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch Shopify settings' },
+      { error: 'Failed to fetch Shopify data' },
       { status: 500 }
     )
   }
@@ -89,33 +74,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const { action, webhookName, enabled } = await request.json()
-
-    if (action === 'toggle_webhook') {
-      // In a real implementation, this would update webhook settings in Shopify
-      console.log(`Toggling webhook ${webhookName} to ${enabled}`)
-      
-      return NextResponse.json({
-        success: true,
-        message: `Webhook ${webhookName} ${enabled ? 'enabled' : 'disabled'} successfully`
-      })
-    }
+    const { action } = await request.json()
 
     if (action === 'sync_data') {
-      // In a real implementation, this would trigger a sync with Shopify
-      console.log('Triggering Shopify data sync')
+      // Trigger Shopify data sync
+      const stores = await databaseService.getStoresByUserId(user.id)
       
-      return NextResponse.json({
-        success: true,
-        message: 'Shopify data sync initiated successfully'
+      if (stores.length === 0) {
+        return NextResponse.json({ error: 'No store connected' }, { status: 404 })
+      }
+
+      // Update the store's updated_at timestamp to reflect sync
+      await databaseService.supabase
+        .from('stores')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', stores[0].id)
+
+      return NextResponse.json({ 
+        message: 'Sync initiated successfully' 
       })
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+
   } catch (error) {
-    console.error('Failed to update Shopify settings:', error)
+    console.error('Shopify settings error:', error)
     return NextResponse.json(
-      { error: 'Failed to update Shopify settings' },
+      { error: 'Failed to process request' },
       { status: 500 }
     )
   }

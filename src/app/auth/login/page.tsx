@@ -25,10 +25,15 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [needsPayment, setNeedsPayment] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const message = searchParams.get("message");
+  const verified = searchParams.get("verified");
+  const errorParam = searchParams.get("error");
   const sessionCleared = searchParams.get("session_cleared");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,8 +51,9 @@ function LoginForm() {
         credentials: "include", // Ensure cookies are included
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         console.log("✅ Login successful:", data);
 
         // Small delay to ensure session is properly set
@@ -56,8 +62,18 @@ function LoginForm() {
           // Force a page reload to ensure navigation updates
           window.location.href = "/dashboard";
         }, 100);
+      } else if (response.status === 403 && data.needsVerification) {
+        // Email verification required
+        setNeedsVerification(true);
+        setUserEmail(data.email || email);
+        setError(data.error || "Email verification required");
+      } else if (response.status === 403 && data.needsPayment) {
+        // Payment required - redirect to payment page
+        const paymentUrl = `/auth/payment?email=${encodeURIComponent(data.email || email)}&plan=${data.plan || 'starter'}&userId=${data.userId}`;
+        console.log("🔄 Redirecting to payment page:", paymentUrl);
+        router.push(paymentUrl);
+        return;
       } else {
-        const data = await response.json();
         setError(data.error || "Login failed");
       }
     } catch (err) {
@@ -151,12 +167,24 @@ function LoginForm() {
 
           <div className="w-full max-w-md mx-auto lg:mx-0 lg:justify-self-end">
             <div className="space-y-4">
-              {message && (
+              {verified && message && (
                 <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-emerald-200 mt-0.5" />
                     <p className="text-emerald-100 text-sm">{message}</p>
                   </div>
+                </div>
+              )}
+
+              {!verified && message && (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+                  <p className="text-white/70 text-sm">{message}</p>
+                </div>
+              )}
+
+              {errorParam && (
+                <div className="rounded-2xl border border-red-400/20 bg-red-400/10 p-4">
+                  <p className="text-red-100 text-sm">{message || 'An error occurred during verification'}</p>
                 </div>
               )}
 
@@ -262,6 +290,51 @@ function LoginForm() {
                         role="alert"
                       >
                         <p className="text-red-100 text-sm">{error}</p>
+                        {needsVerification && (
+                          <div className="mt-3 pt-3 border-t border-red-400/20">
+                            <p className="text-red-100/80 text-xs mb-2">
+                              Please verify your email address to continue.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch('/api/auth/resend-verification', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ email: userEmail })
+                                  });
+                                  const data = await response.json();
+                                  if (response.ok) {
+                                    setError('Verification email has been resent. Please check your inbox.');
+                                    setNeedsVerification(false);
+                                  } else {
+                                    setError(data.error || 'Failed to resend verification email');
+                                  }
+                                } catch (err) {
+                                  setError('Failed to resend verification email');
+                                }
+                              }}
+                              className="text-xs text-[color:var(--accent-hi)] hover:text-white transition-colors underline"
+                            >
+                              Resend verification email
+                            </button>
+                          </div>
+                        )}
+                        {needsPayment && (
+                          <div className="mt-3 pt-3 border-t border-red-400/20">
+                            <p className="text-red-100/80 text-xs mb-3">
+                              You need to complete your payment to access your account.
+                            </p>
+                            <Link
+                              href="/pricing"
+                              className="inline-flex items-center gap-2 text-xs text-[color:var(--accent-hi)] hover:text-white transition-colors underline"
+                            >
+                              Go to Pricing
+                              <ArrowRight className="h-3 w-3" />
+                            </Link>
+                          </div>
+                        )}
                       </div>
                     )}
 

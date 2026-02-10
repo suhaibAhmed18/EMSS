@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from '@/lib/auth'
+import { authServer } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { ScopeVerifier } from '@/lib/shopify/scope-verifier'
 
@@ -9,8 +9,8 @@ import { ScopeVerifier } from '@/lib/shopify/scope-verifier'
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession()
-    if (!session?.user?.id) {
+    const user = await authServer.getCurrentUser()
+    if (!user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     // Get the user's Shopify store
     const store = await db.query.shopifyStores.findFirst({
-      where: (stores, { eq }) => eq(stores.user_id, session.user.id),
+      where: (stores, { eq }) => eq(stores.user_id, user.id),
     })
 
     if (!store) {

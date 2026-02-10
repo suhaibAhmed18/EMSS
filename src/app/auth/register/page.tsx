@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowRight,
@@ -18,9 +18,12 @@ import {
   Zap,
 } from 'lucide-react'
 
-export default function RegisterPage() {
-  const [name, setName] = useState('')
-  const [lastname, setLastname] = useState('')
+function RegisterForm() {
+  const searchParams = useSearchParams()
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
+  const [planPrice, setPlanPrice] = useState<number>(0)
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -32,11 +35,27 @@ export default function RegisterPage() {
   const [successMessage, setSuccessMessage] = useState('')
   const router = useRouter()
 
+  useEffect(() => {
+    const plan = searchParams.get('plan')
+    if (!plan) {
+      router.push('/pricing')
+      return
+    }
+    setSelectedPlan(plan)
+    
+    // Set plan price
+    const prices: Record<string, number> = {
+      starter: 10,
+      professional: 20,
+      enterprise: 30,
+    }
+    setPlanPrice(prices[plan] || 0)
+  }, [searchParams, router])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-    setSuccess(false)
 
     if (password !== confirmPassword) {
       setError('Passwords do not match')
@@ -51,25 +70,26 @@ export default function RegisterPage() {
     }
 
     try {
+      // First, register the user
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, lastname, email, password }),
+        body: JSON.stringify({ 
+          firstName, 
+          lastName, 
+          email, 
+          password, 
+          plan: selectedPlan 
+        }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        if (data.needsVerification) {
-          // Show success message and don't redirect
-          setSuccess(true)
-          setSuccessMessage(data.message || 'Please check your email to verify your account.')
-        } else {
-          // No verification needed - redirect to dashboard
-          router.push('/dashboard')
-        }
+        // Redirect to payment page with user data
+        router.push(`/auth/payment?email=${encodeURIComponent(email)}&plan=${selectedPlan}&userId=${data.user.id}`)
       } else {
         setError(data.error || 'Registration failed')
       }
@@ -178,66 +198,115 @@ export default function RegisterPage() {
                   <div className="mb-8">
                     <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-medium text-white/75">
                       <span className="h-2 w-2 rounded-full bg-[color:var(--accent-hi)] shadow-[0_0_0_4px_rgba(4,31,26,0.18)] animate-glow-pulse" />
-                      Free account
+                      {selectedPlan ? `${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} Plan - $${planPrice}/mo` : 'Free account'}
                     </div>
                     <h2 className="mt-4 text-2xl font-semibold text-white">
                       Create account
                     </h2>
                     <p className="mt-2 text-sm text-white/60">
-                      Start your premium marketing journey.
+                      Complete registration and proceed to payment.
                     </p>
                   </div>
 
                   <form className="space-y-5" onSubmit={handleSubmit}>
-                    <div className="space-y-4">
-                      <div>
-                        <label
-                          htmlFor="name"
-                          className="block text-sm font-medium text-white/70 mb-2"
-                        >
-                          First name
-                        </label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <User className="h-5 w-5 text-white/35" />
+                    {success ? (
+                      <div className="space-y-4">
+                        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-6">
+                          <div className="flex items-start gap-3">
+                            <CheckCircle className="h-6 w-6 text-emerald-200 mt-0.5 flex-shrink-0" />
+                            <div className="space-y-2">
+                              <p className="text-emerald-100 font-medium">Registration Successful!</p>
+                              <p className="text-emerald-100/80 text-sm">{successMessage}</p>
+                              <p className="text-emerald-100/70 text-xs mt-3">
+                                Please check your inbox and click the verification link to activate your account.
+                              </p>
+                            </div>
                           </div>
-                          <input
-                            id="name"
-                            name="name"
-                            type="text"
-                            autoComplete="given-name"
-                            required
-                            disabled={loading}
-                            className="input-premium w-full pl-10! disabled:opacity-60"
-                            placeholder="Enter your first name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                          />
                         </div>
-                      </div>
+                        
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+                          <p className="text-white/60 text-xs">
+                            Didn't receive the email? Check your spam folder or{' '}
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await fetch('/api/auth/resend-verification', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ email })
+                                  })
+                                  setSuccessMessage('Verification email has been resent. Please check your inbox.')
+                                } catch (err) {
+                                  setError('Failed to resend verification email')
+                                }
+                              }}
+                              className="text-[color:var(--accent-hi)] hover:text-white transition-colors underline"
+                            >
+                              resend verification email
+                            </button>
+                          </p>
+                        </div>
 
-                      <div>
-                        <label
-                          htmlFor="lastname"
-                          className="block text-sm font-medium text-white/70 mb-2"
-                        >
-                          Last name
-                        </label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <User className="h-5 w-5 text-white/35" />
+                        <Link href="/auth/login" className="w-full btn-secondary block text-center">
+                          Go to Sign In
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </div>
+                    ) : (
+                      <>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label
+                            htmlFor="firstName"
+                            className="block text-sm font-medium text-white/70 mb-2"
+                          >
+                            First name
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <User className="h-5 w-5 text-white/35" />
+                            </div>
+                            <input
+                              id="firstName"
+                              name="firstName"
+                              type="text"
+                              autoComplete="given-name"
+                              required
+                              disabled={loading}
+                              className="input-premium w-full pl-10! disabled:opacity-60"
+                              placeholder="First name"
+                              value={firstName}
+                              onChange={(e) => setFirstName(e.target.value)}
+                            />
                           </div>
-                          <input
-                            id="lastname"
-                            name="lastname"
-                            type="text"
-                            autoComplete="family-name"
-                            disabled={loading}
-                            className="input-premium w-full pl-10! disabled:opacity-60"
-                            placeholder="Enter your last name"
-                            value={lastname}
-                            onChange={(e) => setLastname(e.target.value)}
-                          />
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="lastName"
+                            className="block text-sm font-medium text-white/70 mb-2"
+                          >
+                            Last name
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <User className="h-5 w-5 text-white/35" />
+                            </div>
+                            <input
+                              id="lastName"
+                              name="lastName"
+                              type="text"
+                              autoComplete="family-name"
+                              required
+                              disabled={loading}
+                              className="input-premium w-full pl-10! disabled:opacity-60"
+                              placeholder="Last name"
+                              value={lastName}
+                              onChange={(e) => setLastName(e.target.value)}
+                            />
+                          </div>
                         </div>
                       </div>
 
@@ -369,42 +438,17 @@ export default function RegisterPage() {
                       </div>
                     )}
 
-                    {success && (
-                      <div
-                        className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4"
-                        role="status"
-                      >
-                        <div className="flex items-start gap-3">
-                          <Mail className="h-5 w-5 text-emerald-300 flex-shrink-0 mt-0.5" />
-                          <div className="space-y-2">
-                            <p className="text-emerald-100 text-sm font-medium">
-                              Verification Email Sent
-                            </p>
-                            <p className="text-emerald-100/80 text-sm">
-                              {successMessage}
-                            </p>
-                            <p className="text-emerald-100/60 text-xs">
-                              Please check your inbox and spam folder. The verification link will expire in 24 hours.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
                     <button
                       type="submit"
-                      disabled={loading || success}
+                      disabled={loading}
                       className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : success ? (
-                        'Account Created'
                       ) : (
                         'Create account'
                       )}
-                      {!loading && !success && <ArrowRight className="h-4 w-4" />}
-                      {success && <CheckCircle className="h-4 w-4" />}
+                      {!loading && <ArrowRight className="h-4 w-4" />}
                     </button>
 
                     <div className="text-xs text-white/55 text-center">
@@ -417,6 +461,8 @@ export default function RegisterPage() {
                         Privacy Policy
                       </Link>
                     </div>
+                    </>
+                    )}
                   </form>
                 </div>
               </div>
@@ -435,5 +481,17 @@ export default function RegisterPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   )
 }

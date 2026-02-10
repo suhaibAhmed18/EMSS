@@ -221,7 +221,10 @@ export default function NewSMSCampaignPage() {
                     key={template.id}
                     onClick={() => {
                       setSelectedTemplate(template)
-                      setCustomizedMessage(template.message)
+                      // Only set the message if switching to a different template or if no message exists
+                      if (selectedTemplate?.id !== template.id || !customizedMessage) {
+                        setCustomizedMessage(template.message)
+                      }
                     }}
                     className={`w-full text-left p-6 rounded-2xl border transition-all ${
                       selectedTemplate?.id === template.id
@@ -265,8 +268,8 @@ export default function NewSMSCampaignPage() {
                   <div className="p-8 flex items-center justify-center min-h-[400px]">
                     {selectedTemplate ? (
                       <div className="max-w-sm w-full">
-                        <div className="bg-blue-500 text-white p-4 rounded-2xl rounded-bl-none shadow-lg break-words">
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">{selectedTemplate.message}</p>
+                        <div className="bg-blue-500 text-white p-4 rounded-2xl rounded-bl-none shadow-lg">
+                          <p className="text-sm leading-relaxed">{selectedTemplate.message}</p>
                         </div>
                         <p className="text-white/40 text-xs mt-2 ml-2">
                           {selectedTemplate.characterCount}/160 characters
@@ -314,12 +317,6 @@ export default function NewSMSCampaignPage() {
                     className="input-premium w-full h-48 resize-none"
                     placeholder="Enter your SMS message..."
                     maxLength={160}
-                    style={{
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      overflowWrap: 'break-word',
-                      wordWrap: 'break-word'
-                    }}
                   />
                   <div className="flex justify-between items-center mt-2">
                     <p className="text-white/40 text-sm">
@@ -386,8 +383,8 @@ export default function NewSMSCampaignPage() {
                   </div>
                   <div className="p-8 flex items-center justify-center min-h-[400px]">
                     <div className="max-w-sm w-full">
-                      <div className="bg-blue-500 text-white p-4 rounded-2xl rounded-bl-none shadow-lg break-words">
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">{customizedMessage}</p>
+                      <div className="bg-blue-500 text-white p-4 rounded-2xl rounded-bl-none shadow-lg">
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{customizedMessage}</p>
                       </div>
                       <p className={`text-xs mt-2 ml-2 font-medium ${
                         customizedMessage.length > 160 ? 'text-red-400' : 'text-white/40'
@@ -423,7 +420,7 @@ export default function NewSMSCampaignPage() {
               <div>
                 <label className="block text-white/80 mb-2 font-medium">Message Preview</label>
                 <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
-                  <p className="text-white/80 whitespace-pre-wrap break-words">{customizedMessage}</p>
+                  <p className="text-white/80">{customizedMessage}</p>
                 </div>
                 <p className="text-white/40 text-sm mt-1">
                   This is how your message will appear to recipients
@@ -460,7 +457,7 @@ export default function NewSMSCampaignPage() {
               <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.02]">
                 <h3 className="text-white font-semibold mb-3">Message Preview</h3>
                 <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
-                  <p className="text-white/80 whitespace-pre-wrap break-words">{customizedMessage}</p>
+                  <p className="text-white/80">{customizedMessage}</p>
                 </div>
               </div>
 

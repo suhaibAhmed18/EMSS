@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { useNotifications } from '@/hooks/useNotifications'
 import NotificationSystem from '@/components/notifications/NotificationSystem'
+import Checkbox from '@/components/ui/Checkbox'
 
 interface Contact {
   id: string
@@ -56,6 +57,12 @@ export default function ContactsPage() {
     tags: [] as string[],
     email_consent: true,
     sms_consent: false
+  })
+  const [validationErrors, setValidationErrors] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: ''
   })
 
   const { notifications, removeNotification, showSuccess, showError } = useNotifications()
@@ -165,7 +172,60 @@ export default function ContactsPage() {
     }
   }
 
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case 'first_name':
+      case 'last_name':
+        if (value && !/^[a-zA-Z\s'-]+$/.test(value)) {
+          return 'Only letters, spaces, hyphens, and apostrophes are allowed'
+        }
+        return ''
+      
+      case 'email':
+        if (!value) {
+          return 'Email is required'
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          return 'Please enter a valid email address'
+        }
+        return ''
+      
+      case 'phone':
+        if (value && !/^[\d\s()+-]+$/.test(value)) {
+          return 'Only numbers, spaces, parentheses, hyphens, and plus sign are allowed'
+        }
+        return ''
+      
+      default:
+        return ''
+    }
+  }
+
+  const handleContactFieldChange = (field: string, value: string) => {
+    setNewContact({ ...newContact, [field]: value })
+    const error = validateField(field, value)
+    setValidationErrors({ ...validationErrors, [field]: error })
+  }
+
+  const isFormValid = (): boolean => {
+    const errors = {
+      first_name: validateField('first_name', newContact.first_name),
+      last_name: validateField('last_name', newContact.last_name),
+      email: validateField('email', newContact.email),
+      phone: validateField('phone', newContact.phone)
+    }
+    
+    setValidationErrors(errors)
+    
+    return !Object.values(errors).some(error => error !== '')
+  }
+
   const handleAddContact = async () => {
+    if (!isFormValid()) {
+      showError('Validation Error', 'Please fix the errors in the form before submitting')
+      return
+    }
+
     try {
       const response = await fetch('/api/contacts', {
         method: 'POST',
@@ -193,6 +253,12 @@ export default function ContactsPage() {
         tags: [],
         email_consent: true,
         sms_consent: false
+      })
+      setValidationErrors({
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: ''
       })
       setShowAddModal(false)
       
@@ -238,6 +304,61 @@ export default function ContactsPage() {
       }
     } catch (err) {
       showError('Import Failed', err instanceof Error ? err.message : 'Failed to import contacts')
+    }
+  }
+
+  const handleImportAllCSVFiles = async (files: FileList) => {
+    try {
+      let totalImported = 0
+      let totalSkipped = 0
+      let totalErrors: string[] = []
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        
+        // Only process CSV files
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+          continue
+        }
+        
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const response = await fetch('/api/contacts/import', {
+          method: 'POST',
+          body: formData,
+        })
+
+        const result = await response.json()
+
+        if (response.ok) {
+          totalImported += result.imported || 0
+          totalSkipped += result.skipped || 0
+          if (result.errors?.length > 0) {
+            totalErrors.push(...result.errors)
+          }
+        } else {
+          totalErrors.push(`${file.name}: ${result.error || 'Import failed'}`)
+        }
+      }
+      
+      // Reload contacts after all imports
+      await loadContacts()
+      
+      setShowImportModal(false)
+      
+      // Show summary message
+      if (totalErrors.length > 0) {
+        showSuccess(
+          'Bulk Import Completed with Warnings', 
+          `Imported ${totalImported} contact(s). ${totalSkipped} skipped. ${totalErrors.length} error(s). Check console for details.`
+        )
+        console.warn('Import errors:', totalErrors)
+      } else {
+        showSuccess('Bulk Import Successful', `Successfully imported ${totalImported} contact(s) from ${files.length} file(s)`)
+      }
+    } catch (err) {
+      showError('Bulk Import Failed', err instanceof Error ? err.message : 'Failed to import CSV files')
     }
   }
 
@@ -445,11 +566,9 @@ export default function ContactsPage() {
                     <thead>
                       <tr className="border-b border-white/10">
                         <th className="text-left py-4 px-4">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={selectedContacts.length === filteredContacts.length && filteredContacts.length > 0}
                             onChange={handleSelectAll}
-                            className="cursor-pointer"
                           />
                         </th>
                         <th className="text-left py-4 px-4 text-sm font-medium text-white/55">Contact</th>
@@ -465,11 +584,9 @@ export default function ContactsPage() {
                       {filteredContacts.map((contact) => (
                         <tr key={contact.id} className="border-b border-white/10 hover:bg-white/[0.03]">
                           <td className="py-4 px-4">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={selectedContacts.includes(contact.id)}
                               onChange={() => handleSelectContact(contact.id)}
-                              className="cursor-pointer"
                             />
                           </td>
                           <td className="py-4 px-4">
@@ -584,10 +701,13 @@ export default function ContactsPage() {
                   <input
                     type="text"
                     value={newContact.first_name}
-                    onChange={(e) => setNewContact({...newContact, first_name: e.target.value})}
-                    className="input-premium w-full"
+                    onChange={(e) => handleContactFieldChange('first_name', e.target.value)}
+                    className={`input-premium w-full ${validationErrors.first_name ? 'border-red-400' : ''}`}
                     placeholder="John"
                   />
+                  {validationErrors.first_name && (
+                    <p className="text-xs text-red-400 mt-1">{validationErrors.first_name}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-white/55 mb-2">
@@ -596,10 +716,13 @@ export default function ContactsPage() {
                   <input
                     type="text"
                     value={newContact.last_name}
-                    onChange={(e) => setNewContact({...newContact, last_name: e.target.value})}
-                    className="input-premium w-full"
+                    onChange={(e) => handleContactFieldChange('last_name', e.target.value)}
+                    className={`input-premium w-full ${validationErrors.last_name ? 'border-red-400' : ''}`}
                     placeholder="Doe"
                   />
+                  {validationErrors.last_name && (
+                    <p className="text-xs text-red-400 mt-1">{validationErrors.last_name}</p>
+                  )}
                 </div>
               </div>
               
@@ -610,11 +733,14 @@ export default function ContactsPage() {
                 <input
                   type="email"
                   value={newContact.email}
-                  onChange={(e) => setNewContact({...newContact, email: e.target.value})}
-                  className="input-premium w-full"
+                  onChange={(e) => handleContactFieldChange('email', e.target.value)}
+                  className={`input-premium w-full ${validationErrors.email ? 'border-red-400' : ''}`}
                   placeholder="john@example.com"
                   required
                 />
+                {validationErrors.email && (
+                  <p className="text-xs text-red-400 mt-1">{validationErrors.email}</p>
+                )}
               </div>
               
               <div>
@@ -624,45 +750,48 @@ export default function ContactsPage() {
                 <input
                   type="tel"
                   value={newContact.phone}
-                  onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
-                  className="input-premium w-full"
+                  onChange={(e) => handleContactFieldChange('phone', e.target.value)}
+                  className={`input-premium w-full ${validationErrors.phone ? 'border-red-400' : ''}`}
                   placeholder="+1 (555) 123-4567"
                 />
+                {validationErrors.phone && (
+                  <p className="text-xs text-red-400 mt-1">{validationErrors.phone}</p>
+                )}
               </div>
               
               <div className="space-y-2">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={newContact.email_consent}
-                    onChange={(e) => setNewContact({...newContact, email_consent: e.target.checked})}
-                    className="cursor-pointer mr-2"
-                  />
-                  <span className="text-sm text-white/70">Email marketing consent</span>
-                </label>
+                <Checkbox
+                  label="Email marketing consent"
+                  checked={newContact.email_consent}
+                  onChange={(e) => setNewContact({...newContact, email_consent: e.target.checked})}
+                />
                 
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={newContact.sms_consent}
-                    onChange={(e) => setNewContact({...newContact, sms_consent: e.target.checked})}
-                    className="cursor-pointer mr-2"
-                  />
-                  <span className="text-sm text-white/70">SMS marketing consent</span>
-                </label>
+                <Checkbox
+                  label="SMS marketing consent"
+                  checked={newContact.sms_consent}
+                  onChange={(e) => setNewContact({...newContact, sms_consent: e.target.checked})}
+                />
               </div>
             </div>
             
             <div className="flex justify-end space-x-4 mt-6">
               <button
-                onClick={() => setShowAddModal(false)}
+                onClick={() => {
+                  setShowAddModal(false)
+                  setValidationErrors({
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    phone: ''
+                  })
+                }}
                 className="btn-ghost"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddContact}
-                disabled={!newContact.email}
+                disabled={!newContact.email || Object.values(validationErrors).some(error => error !== '')}
                 className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Add Contact
@@ -696,6 +825,36 @@ export default function ContactsPage() {
                 />
                 <p className="text-xs text-white/45 mt-1">
                   Supported columns: email (required), first_name, last_name, phone, tags, email_consent, sms_consent, total_spent, order_count
+                </p>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-[#0A0A0A] px-2 text-white/45">OR</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/55 mb-2">
+                  Import All CSV Files
+                </label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  multiple
+                  onChange={(e) => {
+                    const files = e.target.files
+                    if (files && files.length > 0) {
+                      handleImportAllCSVFiles(files)
+                    }
+                  }}
+                  className="input-premium w-full"
+                />
+                <p className="text-xs text-white/45 mt-1">
+                  Select multiple CSV files to import all at once
                 </p>
               </div>
               

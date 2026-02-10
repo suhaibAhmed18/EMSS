@@ -9,7 +9,10 @@
     "lint": "eslint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "create-test-user": "node scripts/create-test-user.js",
+    "check-test-account": "node scripts/check-test-account.js",
+    "test-email": "node test-email-sending.js"
   },
   "dependencies": {
     "@shopify/app-bridge": "^3.7.11",
@@ -20,7 +23,8 @@
     "@supabase/auth-helpers-react": "^0.15.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.3",
-    "dotenv": "^17.2.4",
+    "@types/bcrypt": "^6.0.0",
+    "bcrypt": "^6.0.0",
     "geist": "^1.5.1",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
@@ -28,6 +32,7 @@
     "react-dom": "19.2.3",
     "recharts": "^3.7.0",
     "resend": "^6.9.1",
+    "stripe": "^20.3.1",
     "telnyx": "^5.15.0",
     "zod": "^4.3.6"
   },

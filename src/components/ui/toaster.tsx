@@ -89,23 +89,23 @@ export function Toaster() {
           key={toast.id}
           className={`max-w-sm w-full rounded-2xl border p-4 shadow-premium backdrop-blur-md animate-slide-up ${getStyles(toast.type)}`}
         >
-          <div className="flex items-start gap-3">
+          <div className="flex items-start">
             <div className="flex-shrink-0">
               {getIcon(toast.type)}
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="ml-3 w-0 flex-1">
               {toast.title && (
-                <p className="text-sm font-medium text-white break-words">
+                <p className="text-sm font-medium text-white">
                   {toast.title}
                 </p>
               )}
               {toast.description && (
-                <p className="mt-1 text-sm text-white/70 break-words">
+                <p className="mt-1 text-sm text-white/70">
                   {toast.description}
                 </p>
               )}
             </div>
-            <div className="flex-shrink-0">
+            <div className="ml-4 flex-shrink-0 flex">
               <button
                 className="inline-flex text-white/55 hover:text-white focus:outline-none"
                 onClick={() => removeToast(toast.id)}

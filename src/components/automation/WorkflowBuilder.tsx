@@ -6,6 +6,7 @@ import WorkflowCanvas from './WorkflowCanvas'
 import TriggerSelector from './TriggerSelector'
 import ActionSelector from './ActionSelector'
 import WorkflowSettings from './WorkflowSettings'
+import Checkbox from '@/components/ui/Checkbox'
 
 interface WorkflowNode {
   id: string
@@ -143,18 +144,14 @@ export default function WorkflowBuilder({ onSave, saving, initialData }: Workflo
           </div>
           
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-                className="rounded border-white/20 bg-white/10 text-[color:var(--accent-hi)] focus:ring-[color:var(--accent-hi)] focus:ring-offset-0 checked:bg-[color:var(--accent-hi)] checked:border-[color:var(--accent-hi)]"
-              />
-              <span className="text-white/70">Active</span>
-            </label>
+            <Checkbox
+              label="Active"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+            />
             <button
               onClick={() => setShowSettings(true)}
-              className="px-4 py-2 text-white/70 hover:bg-white/[0.04] rounded-lg transition-colors"
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             >
               Settings
             </button>

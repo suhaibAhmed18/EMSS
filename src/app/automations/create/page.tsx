@@ -22,7 +22,6 @@ interface AutomationTrigger {
 }
 
 const TRIGGERS: AutomationTrigger[] = [
-  // Customer triggers
   {
     id: 'customer_created',
     name: 'Welcome New Customer',
@@ -31,41 +30,25 @@ const TRIGGERS: AutomationTrigger[] = [
     category: 'customer'
   },
   {
-    id: 'customer_updated',
-    name: 'Customer Updated',
-    description: 'Trigger when customer information changes',
-    icon: UserPlus,
-    category: 'customer'
-  },
-  // Order triggers
-  {
-    id: 'order_created',
-    name: 'Order Created',
-    description: 'Trigger when a new order is created',
+    id: 'cart_abandoned',
+    name: 'Cart Abandoned',
+    description: 'Trigger when a customer abandons their cart',
     icon: ShoppingCart,
-    category: 'order'
+    category: 'cart'
   },
   {
-    id: 'order_paid',
-    name: 'Order Paid',
-    description: 'Trigger when an order is paid',
+    id: 'order_placed',
+    name: 'Order Placed',
+    description: 'Trigger when a customer completes an order',
     icon: DollarSign,
     category: 'order'
   },
   {
-    id: 'order_updated',
-    name: 'Order Updated',
-    description: 'Trigger when an order status changes',
-    icon: ShoppingCart,
-    category: 'order'
-  },
-  // Cart triggers (note: requires checkout webhook setup)
-  {
-    id: 'cart_abandoned',
-    name: 'Cart Abandoned',
-    description: 'Trigger when a customer abandons their cart (webhook setup required)',
-    icon: ShoppingCart,
-    category: 'cart'
+    id: 'email_opened',
+    name: 'Email Opened',
+    description: 'Trigger when a customer opens an email',
+    icon: Mail,
+    category: 'engagement'
   }
 ]
 

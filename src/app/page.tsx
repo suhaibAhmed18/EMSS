@@ -130,8 +130,8 @@ export default function HomePage() {
               <Link href="/auth/login" className="btn-ghost px-3 py-2">
                 Sign in
               </Link>
-              <Link href="/auth/register" className="btn-primary">
-                Start free
+              <Link href="/pricing" className="btn-primary">
+                View Pricing
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </nav>
@@ -161,8 +161,8 @@ export default function HomePage() {
                   <Link href="/auth/login" className="btn-secondary" onClick={() => setMobileMenuOpen(false)}>
                     Sign in
                   </Link>
-                  <Link href="/auth/register" className="btn-primary" onClick={() => setMobileMenuOpen(false)}>
-                    Start free
+                  <Link href="/pricing" className="btn-primary" onClick={() => setMobileMenuOpen(false)}>
+                    View Pricing
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -198,8 +198,8 @@ export default function HomePage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/auth/register" className="btn-primary">
-                  Start free
+                <Link href="/pricing" className="btn-primary">
+                  View Pricing
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link href="/auth/login" className="btn-secondary">
@@ -359,8 +359,8 @@ export default function HomePage() {
               <h2 className="text-3xl sm:text-4xl font-semibold text-premium">Operators love the calm.</h2>
               <p className="mt-4 text-lg text-white/65">Stories from teams who wanted premium UX without sacrificing power.</p>
             </div>
-            <Link href="/auth/register" className="btn-secondary">
-              Start free
+            <Link href="/pricing" className="btn-secondary">
+              Get Started
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -395,8 +395,8 @@ export default function HomePage() {
                       Connect Shopify, import subscribers, and launch campaigns that look like they belong in 2026.
                     </p>
                     <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                      <Link href="/auth/register" className="btn-primary">
-                        Start free
+                      <Link href="/pricing" className="btn-primary">
+                        Get Started
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                       <Link href="/auth/login" className="btn-secondary">
@@ -460,8 +460,8 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/auth/register" className="text-white/60 hover:text-white transition-colors">
-                    Start free
+                  <Link href="/pricing" className="text-white/60 hover:text-white transition-colors">
+                    Pricing
                   </Link>
                 </li>
                 <li>

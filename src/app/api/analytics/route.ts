@@ -64,13 +64,21 @@ export async function GET(request: NextRequest) {
       .gte('created_at_shopify', startDate.toISOString())
       .lte('created_at_shopify', endDate.toISOString())
 
-    const totalRevenue = orders?.reduce((sum, order) => sum + (parseFloat(String(order.total_price)) || 0), 0) || 0
-    const emailRevenue = orders?.filter(o => o.attributed_campaign_type === 'email')
-      .reduce((sum, order) => sum + (parseFloat(String(order.total_price)) || 0), 0) || 0
-    const smsRevenue = orders?.filter(o => o.attributed_campaign_type === 'sms')
-      .reduce((sum, order) => sum + (parseFloat(String(order.total_price)) || 0), 0) || 0
-    const automationRevenue = orders?.filter(o => o.attributed_campaign_type === 'automation')
-      .reduce((sum, order) => sum + (parseFloat(String(order.total_price)) || 0), 0) || 0
+    type OrderData = {
+      total_price: number | string
+      created_at_shopify: string
+      attributed_campaign_id?: string | null
+      attributed_campaign_type?: string | null
+    }
+
+    const typedOrders = (orders || []) as OrderData[]
+    const totalRevenue = typedOrders.reduce((sum, order) => sum + (parseFloat(String(order.total_price)) || 0), 0)
+    const emailRevenue = typedOrders.filter(o => o.attributed_campaign_type === 'email')
+      .reduce((sum, order) => sum + (parseFloat(String(order.total_price)) || 0), 0)
+    const smsRevenue = typedOrders.filter(o => o.attributed_campaign_type === 'sms')
+      .reduce((sum, order) => sum + (parseFloat(String(order.total_price)) || 0), 0)
+    const automationRevenue = typedOrders.filter(o => o.attributed_campaign_type === 'automation')
+      .reduce((sum, order) => sum + (parseFloat(String(order.total_price)) || 0), 0)
 
     // Get email campaigns in date range
     const { data: emailCampaigns } = await databaseService.supabase

@@ -36,7 +36,7 @@ export class DatabaseService {
 
     console.log('🏪 Query result:', data ? `${data.length} stores found` : 'null result')
     if (data && data.length > 0) {
-      console.log('🏪 Store details:', data.map((s: any) => ({ 
+      console.log('🏪 Store details:', data.map((s) => ({ 
         id: s.id, 
         domain: s.shop_domain, 
         active: s.is_active,
@@ -321,234 +321,6 @@ export class DatabaseService {
       }
     }
   }
-  // Get revenue history for charts (last 30 days)
-  async getRevenueHistory(storeId: string, days: number = 30) {
-    try {
-      const startDate = new Date()
-      startDate.setDate(startDate.getDate() - days)
-
-      const { data: orders } = await supabase
-        .from('shopify_orders')
-        .select('total_price, created_at_shopify, currency')
-        .eq('store_id', storeId)
-        .gte('created_at_shopify', startDate.toISOString())
-        .order('created_at_shopify', { ascending: true })
-
-      // Group by date
-      const revenueByDate: Record<string, { email: number; sms: number; total: number }> = {}
-
-      orders?.forEach((order: any) => {
-        const date = new Date(order.created_at_shopify).toISOString().split('T')[0]
-        if (!revenueByDate[date]) {
-          revenueByDate[date] = { email: 0, sms: 0, total: 0 }
-        }
-        const amount = parseFloat(String(order.total_price)) || 0
-        revenueByDate[date].total += amount
-        // For now, split revenue 70/30 between email/sms as placeholder
-        revenueByDate[date].email += amount * 0.7
-        revenueByDate[date].sms += amount * 0.3
-      })
-
-      // Fill in missing dates with zeros
-      const result = []
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date()
-        date.setDate(date.getDate() - i)
-        const dateStr = date.toISOString().split('T')[0]
-        result.push({
-          date: dateStr,
-          email: Math.round(revenueByDate[dateStr]?.email || 0),
-          sms: Math.round(revenueByDate[dateStr]?.sms || 0),
-          total: Math.round(revenueByDate[dateStr]?.total || 0)
-        })
-      }
-
-      return result
-    } catch (error) {
-      console.error('Failed to fetch revenue history:', error)
-      return []
-    }
-  }
-
-  // Get historical comparison data
-  async getHistoricalComparison(storeId: string, currentDays: number = 7) {
-    try {
-      const now = new Date()
-      const currentStart = new Date(now)
-      currentStart.setDate(currentStart.getDate() - currentDays)
-
-      const previousStart = new Date(currentStart)
-      previousStart.setDate(previousStart.getDate() - currentDays)
-
-      // Current period
-      const { data: currentOrders } = await supabase
-        .from('shopify_orders')
-        .select('total_price')
-        .eq('store_id', storeId)
-        .gte('created_at_shopify', currentStart.toISOString())
-
-      const currentRevenue = currentOrders?.reduce((sum, order) =>
-        sum + (parseFloat(String(order.total_price)) || 0), 0) || 0
-
-      // Previous period
-      const { data: previousOrders } = await supabase
-        .from('shopify_orders')
-        .select('total_price')
-        .eq('store_id', storeId)
-        .gte('created_at_shopify', previousStart.toISOString())
-        .lt('created_at_shopify', currentStart.toISOString())
-
-      const previousRevenue = previousOrders?.reduce((sum, order) =>
-        sum + (parseFloat(String(order.total_price)) || 0), 0) || 0
-
-      // Calculate percentage changes
-      const revenueChange = previousRevenue > 0
-        ? ((currentRevenue - previousRevenue) / previousRevenue) * 100
-        : 0
-
-      // Get contact changes
-      const { count: currentContacts } = await supabase
-        .from('contacts')
-        .select('id', { count: 'exact', head: true })
-        .eq('store_id', storeId)
-        .gte('created_at', currentStart.toISOString())
-
-      const { count: previousContacts } = await supabase
-        .from('contacts')
-        .select('id', { count: 'exact', head: true })
-        .eq('store_id', storeId)
-        .gte('created_at', previousStart.toISOString())
-        .lt('created_at', currentStart.toISOString())
-
-      const contactChange = (previousContacts || 0) > 0
-        ? (((currentContacts || 0) - (previousContacts || 0)) / (previousContacts || 0)) * 100
-        : 0
-
-      // Get campaign changes
-      const { count: currentCampaigns } = await supabase
-        .from('email_campaigns')
-        .select('id', { count: 'exact', head: true })
-        .eq('store_id', storeId)
-        .gte('created_at', currentStart.toISOString())
-
-      const { count: previousCampaigns } = await supabase
-        .from('email_campaigns')
-        .select('id', { count: 'exact', head: true })
-        .eq('store_id', storeId)
-        .gte('created_at', previousStart.toISOString())
-        .lt('created_at', currentStart.toISOString())
-
-      const campaignChange = (previousCampaigns || 0) > 0
-        ? (((currentCampaigns || 0) - (previousCampaigns || 0)) / (previousCampaigns || 0)) * 100
-        : 0
-
-      return {
-        revenueChange: Math.round(revenueChange * 10) / 10,
-        contactChange: Math.round(contactChange * 10) / 10,
-        campaignChange: Math.round(campaignChange * 10) / 10,
-        messageChange: Math.round(campaignChange * 10) / 10 // Use campaign change as proxy
-      }
-    } catch (error) {
-      console.error('Failed to fetch historical comparison:', error)
-      return {
-        revenueChange: 0,
-        contactChange: 0,
-        campaignChange: 0,
-        messageChange: 0
-      }
-    }
-  }
-
-  // Get top performing automations
-  async getTopAutomations(storeId: string, limit: number = 3) {
-      try {
-        const { data: automations } = await supabase
-          .from('automation_workflows')
-          .select('*')
-          .eq('store_id', storeId)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false })
-          .limit(limit)
-
-        if (!automations || automations.length === 0) {
-          return []
-        }
-
-        // For now, return automations with simulated metrics
-        // In production, you'd track actual execution data in an automation_executions table
-        return automations.map((automation: any, index: number) => {
-          // Simulate metrics based on automation age and type
-          const daysOld = Math.floor((Date.now() - new Date(automation.created_at).getTime()) / (1000 * 60 * 60 * 24))
-          const baseTriggers = Math.max(10, daysOld * 5)
-          const baseRevenue = baseTriggers * (50 + Math.random() * 100)
-
-          return {
-            id: automation.id,
-            name: automation.name,
-            type: automation.trigger_type || 'Unknown',
-            status: automation.is_active ? 'active' : 'paused',
-            triggers: baseTriggers + Math.floor(Math.random() * 20),
-            revenue: `$${Math.round(baseRevenue).toLocaleString()}`
-          }
-        })
-      } catch (error) {
-        console.error('Failed to fetch top automations:', error)
-        return []
-      }
-    }
-
-  // Calculate campaign revenue attribution
-  async getCampaignRevenue(campaignId: string, campaignType: 'email' | 'sms') {
-      try {
-        // Get campaign sends from unified campaign_sends table
-        const { data: sends } = await supabase
-          .from('campaign_sends')
-          .select('contact_id')
-          .eq('campaign_id', campaignId)
-          .eq('campaign_type', campaignType)
-
-        if (!sends || sends.length === 0) {
-          return 0
-        }
-
-        const contactIds = sends.map((s: any) => s.contact_id).filter(Boolean)
-
-        if (contactIds.length === 0) {
-          return 0
-        }
-
-        // Get campaign sent date
-        const { data: campaign } = await supabase
-          .from(campaignType === 'email' ? 'email_campaigns' : 'sms_campaigns')
-          .select('sent_at')
-          .eq('id', campaignId)
-          .single()
-
-        if (!campaign?.sent_at) {
-          return 0
-        }
-
-        const sentDate = new Date(campaign.sent_at)
-        const attributionWindow = new Date(sentDate)
-        attributionWindow.setDate(attributionWindow.getDate() + 7)
-
-        // Get orders from these contacts within 7 days of campaign
-        const { data: orders } = await supabase
-          .from('shopify_orders')
-          .select('total_price')
-          .in('contact_id', contactIds)
-          .gte('created_at_shopify', sentDate.toISOString())
-          .lte('created_at_shopify', attributionWindow.toISOString())
-
-        const revenue = orders?.reduce((sum, order) => 
-          sum + (parseFloat(String(order.total_price)) || 0), 0) || 0
-
-        return revenue
-      } catch (error) {
-        console.error('Failed to calculate campaign revenue:', error)
-        return 0
-      }
-    }
 
   // Dashboard data
   async getDashboardData(userId: string) {
@@ -598,7 +370,7 @@ export class DatabaseService {
       const orderCount = orders?.length || 0
       const totalRevenue = orders?.reduce((sum, order) => sum + (parseFloat(String(order.total_price)) || 0), 0) || 0
       const averageOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0
-      const currency = orders?.[0]?.currency || 'USD'
+      const currency = orders?.[0]?.currency || primaryStore.currency || 'USD'
 
       // Get recent campaigns
       const { campaigns: recentEmailCampaigns } = await this.getEmailCampaignsByStoreId(primaryStore.id, 5)
@@ -613,7 +385,7 @@ export class DatabaseService {
       // Calculate revenue for each campaign
       const recentCampaignsWithRevenue = await Promise.all(
         allCampaigns.slice(0, 5).map(async (campaign: any) => {
-          const revenue = await this.getCampaignRevenue(campaign.id, campaign.type)
+          const revenue = await this.getCampaignRevenue(campaign.id, campaign.type, primaryStore.id)
           return {
             id: campaign.id,
             name: campaign.name,
@@ -622,7 +394,7 @@ export class DatabaseService {
             sent: campaign.recipient_count?.toString() || '0',
             opened: campaign.type === 'email' ? (campaign.opened_count?.toString() || '0') : 'N/A',
             clicked: campaign.type === 'email' ? (campaign.clicked_count?.toString() || '0') : 'N/A',
-            revenue: `$${Math.round(revenue).toLocaleString()}`,
+            revenue: `$${revenue.toFixed(2)}`,
             date: new Date(campaign.created_at).toLocaleDateString()
           }
         })
@@ -641,22 +413,26 @@ export class DatabaseService {
         .eq('store_id', primaryStore.id)
         .eq('sms_consent', true)
 
-      // Get historical comparison data
+      // Get top automations
+      const topAutomations = await this.getTopAutomations(primaryStore.id, 3)
+      const formattedAutomations = topAutomations.map(auto => ({
+        ...auto,
+        revenue: `$${auto.revenue.toFixed(2)}`
+      }))
+
+      // Get historical comparison for trends
       const historicalData = await this.getHistoricalComparison(primaryStore.id, 7)
 
-      // Get revenue history for charts
+      // Get revenue history for chart
       const revenueHistory = await this.getRevenueHistory(primaryStore.id, 30)
-
-      // Get top performing automations
-      const topAutomations = await this.getTopAutomations(primaryStore.id, 3)
 
       return {
         hasStore: true,
         storeMetrics: {
-          totalRevenue: `$${Math.round(totalRevenue).toLocaleString()}`,
+          totalRevenue: `$${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
           orderCount: orderCount.toString(),
           customerCount: analytics.totalContacts.toString(),
-          averageOrderValue: `$${Math.round(averageOrderValue).toLocaleString()}`
+          averageOrderValue: `$${averageOrderValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         },
         campaignStats: {
           emailCampaigns: analytics.emailCampaigns,
@@ -665,7 +441,7 @@ export class DatabaseService {
           totalRevenue: analytics.revenue
         },
         recentCampaigns: recentCampaignsWithRevenue,
-        topAutomations,
+        topAutomations: formattedAutomations,
         contactStats: {
           totalContacts: analytics.totalContacts,
           emailConsent: emailConsentCount || 0,
@@ -677,6 +453,209 @@ export class DatabaseService {
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
       throw error
+    }
+  }
+  async getRevenueHistory(storeId: string, days: number = 30) {
+    try {
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - days)
+
+      const { data: orders } = await supabase
+        .from('shopify_orders')
+        .select('total_price, created_at, financial_status')
+        .eq('store_id', storeId)
+        .gte('created_at', startDate.toISOString())
+        .order('created_at', { ascending: true })
+
+      // Group by date
+      const revenueByDate = new Map<string, number>()
+
+      orders?.forEach(order => {
+        const date = new Date(order.created_at).toISOString().split('T')[0]
+        const revenue = parseFloat(String(order.total_price)) || 0
+        revenueByDate.set(date, (revenueByDate.get(date) || 0) + revenue)
+      })
+
+      // Fill in missing dates with 0
+      const result = []
+      for (let i = 0; i < days; i++) {
+        const date = new Date()
+        date.setDate(date.getDate() - (days - 1 - i))
+        const dateStr = date.toISOString().split('T')[0]
+        result.push({
+          date: dateStr,
+          revenue: revenueByDate.get(dateStr) || 0
+        })
+      }
+
+      return result
+    } catch (error) {
+      console.error('Failed to get revenue history:', error)
+      return []
+    }
+  }
+
+  async getHistoricalComparison(storeId: string, days: number = 7) {
+    try {
+      const now = new Date()
+      const currentPeriodStart = new Date(now)
+      currentPeriodStart.setDate(currentPeriodStart.getDate() - days)
+
+      const previousPeriodStart = new Date(currentPeriodStart)
+      previousPeriodStart.setDate(previousPeriodStart.getDate() - days)
+
+      // Get current period data
+      const { data: currentOrders } = await supabase
+        .from('shopify_orders')
+        .select('total_price')
+        .eq('store_id', storeId)
+        .gte('created_at', currentPeriodStart.toISOString())
+
+      const { count: currentContacts } = await supabase
+        .from('contacts')
+        .select('id', { count: 'exact', head: true })
+        .eq('store_id', storeId)
+        .gte('created_at', currentPeriodStart.toISOString())
+
+      const { count: currentCampaigns } = await supabase
+        .from('email_campaigns')
+        .select('id', { count: 'exact', head: true })
+        .eq('store_id', storeId)
+        .gte('created_at', currentPeriodStart.toISOString())
+
+      // Get previous period data
+      const { data: previousOrders } = await supabase
+        .from('shopify_orders')
+        .select('total_price')
+        .eq('store_id', storeId)
+        .gte('created_at', previousPeriodStart.toISOString())
+        .lt('created_at', currentPeriodStart.toISOString())
+
+      const { count: previousContacts } = await supabase
+        .from('contacts')
+        .select('id', { count: 'exact', head: true })
+        .eq('store_id', storeId)
+        .gte('created_at', previousPeriodStart.toISOString())
+        .lt('created_at', currentPeriodStart.toISOString())
+
+      const { count: previousCampaigns } = await supabase
+        .from('email_campaigns')
+        .select('id', { count: 'exact', head: true })
+        .eq('store_id', storeId)
+        .gte('created_at', previousPeriodStart.toISOString())
+        .lt('created_at', currentPeriodStart.toISOString())
+
+      // Calculate changes
+      const currentRevenue = currentOrders?.reduce((sum, o) => sum + (parseFloat(String(o.total_price)) || 0), 0) || 0
+      const previousRevenue = previousOrders?.reduce((sum, o) => sum + (parseFloat(String(o.total_price)) || 0), 0) || 0
+
+      const calculateChange = (current: number, previous: number) => {
+        if (previous === 0) return current > 0 ? 100 : 0
+        return ((current - previous) / previous) * 100
+      }
+
+      return {
+        revenueChange: calculateChange(currentRevenue, previousRevenue),
+        contactsChange: calculateChange(currentContacts || 0, previousContacts || 0),
+        campaignsChange: calculateChange(currentCampaigns || 0, previousCampaigns || 0),
+        messagesChange: calculateChange(currentCampaigns || 0, previousCampaigns || 0)
+      }
+    } catch (error) {
+      console.error('Failed to get historical comparison:', error)
+      return {
+        revenueChange: 0,
+        contactsChange: 0,
+        campaignsChange: 0,
+        messagesChange: 0
+      }
+    }
+  }
+
+  async getCampaignRevenue(campaignId: string, campaignType: 'email' | 'sms', storeId: string) {
+    try {
+      // Get campaign send date
+      const table = campaignType === 'email' ? 'email_campaigns' : 'sms_campaigns'
+      const { data: campaign } = await supabase
+        .from(table)
+        .select('sent_at, created_at')
+        .eq('id', campaignId)
+        .single()
+
+      if (!campaign || !campaign.sent_at) return 0
+
+      // 7-day attribution window
+      const sendDate = new Date(campaign.sent_at)
+      const attributionEnd = new Date(sendDate)
+      attributionEnd.setDate(attributionEnd.getDate() + 7)
+
+      // Get campaign recipients
+      const { data: sends } = await supabase
+        .from('campaign_sends')
+        .select('contact_id')
+        .eq('campaign_id', campaignId)
+
+      if (!sends || sends.length === 0) return 0
+
+      const contactIds = sends.map(s => s.contact_id)
+
+      // Get orders from recipients within attribution window
+      const { data: orders } = await supabase
+        .from('shopify_orders')
+        .select('total_price, contact_id')
+        .eq('store_id', storeId)
+        .in('contact_id', contactIds)
+        .gte('created_at', sendDate.toISOString())
+        .lte('created_at', attributionEnd.toISOString())
+
+      const revenue = orders?.reduce((sum, o) => sum + (parseFloat(String(o.total_price)) || 0), 0) || 0
+      return revenue
+    } catch (error) {
+      console.error('Failed to get campaign revenue:', error)
+      return 0
+    }
+  }
+
+  async getTopAutomations(storeId: string, limit: number = 3) {
+    try {
+      const { data: automations } = await supabase
+        .from('automation_workflows')
+        .select('*')
+        .eq('store_id', storeId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(limit * 2) // Get more to filter
+
+      if (!automations || automations.length === 0) return []
+
+      // Calculate metrics for each automation
+      const automationsWithMetrics = await Promise.all(
+        automations.map(async (automation) => {
+          // For now, use simulated metrics based on automation age
+          // In production, query automation_executions table
+          const daysSinceCreation = Math.floor(
+            (Date.now() - new Date(automation.created_at).getTime()) / (1000 * 60 * 60 * 24)
+          )
+          const estimatedTriggers = Math.max(0, daysSinceCreation * 5)
+          const estimatedRevenue = estimatedTriggers * 25
+
+          return {
+            id: automation.id,
+            name: automation.name,
+            type: automation.trigger_type,
+            status: automation.is_active ? 'active' : 'inactive',
+            triggers: estimatedTriggers,
+            revenue: estimatedRevenue
+          }
+        })
+      )
+
+      // Sort by revenue and return top N
+      return automationsWithMetrics
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, limit)
+    } catch (error) {
+      console.error('Failed to get top automations:', error)
+      return []
     }
   }
 }

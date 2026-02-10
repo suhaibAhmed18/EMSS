@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Eye, Type, AlignLeft, Image as ImageIcon, Link as LinkIcon, Trash2, Plus, MoveVertical } from 'lucide-react'
 
 interface EmailBlock {
@@ -128,6 +128,16 @@ export default function EmailBuilder({ initialBlocks = [], initialHtml = '', onS
   const [showPreview, setShowPreview] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [templateName, setTemplateName] = useState('')
+
+  // Update blocks when initialHtml changes (e.g., when navigating back and forth in wizard)
+  useEffect(() => {
+    if (initialHtml) {
+      const parsedBlocks = parseHtmlToBlocks(initialHtml)
+      if (parsedBlocks.length > 0) {
+        setBlocks(parsedBlocks)
+      }
+    }
+  }, [initialHtml])
 
   const addBlock = (type: EmailBlock['type']) => {
     const newBlock: EmailBlock = {

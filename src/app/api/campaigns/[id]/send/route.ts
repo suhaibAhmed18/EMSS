@@ -91,18 +91,82 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to update campaign' }, { status: 500 })
     }
 
-    // TODO: Implement actual email/SMS sending
-    // For now, we'll simulate sending and mark as sent
-    
-    // Simulate sending delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Send to each contact
+    let successCount = 0
+    let failCount = 0
+    const errors: string[] = []
+
+    for (const contact of eligibleContacts) {
+      try {
+        if (campaignType === 'email') {
+          // Send email using Resend
+          const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/email/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: contact.email,
+              subject: campaign.subject,
+              html: campaign.html_content || campaign.text_content,
+              from_name: campaign.from_name || 'MarketingPro',
+              from_email: campaign.from_email || process.env.EMAIL_FROM_ADDRESS
+            })
+          })
+
+          if (emailResponse.ok) {
+            successCount++
+            // Record send
+            await databaseService.supabase.from('campaign_sends').insert({
+              campaign_id: campaignId,
+              campaign_type: 'email',
+              contact_id: contact.id,
+              status: 'delivered',
+              sent_at: new Date().toISOString(),
+              delivered_at: new Date().toISOString()
+            })
+          } else {
+            failCount++
+            errors.push(`Failed to send to ${contact.email}`)
+          }
+        } else {
+          // Send SMS using Telnyx
+          const smsResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/sms/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: contact.phone,
+              message: campaign.message,
+              from: campaign.from_number || process.env.TELNYX_PHONE_NUMBER
+            })
+          })
+
+          if (smsResponse.ok) {
+            successCount++
+            // Record send
+            await databaseService.supabase.from('campaign_sends').insert({
+              campaign_id: campaignId,
+              campaign_type: 'sms',
+              contact_id: contact.id,
+              status: 'delivered',
+              sent_at: new Date().toISOString(),
+              delivered_at: new Date().toISOString()
+            })
+          } else {
+            failCount++
+            errors.push(`Failed to send to ${contact.phone}`)
+          }
+        }
+      } catch (error) {
+        failCount++
+        errors.push(`Error sending to contact ${contact.id}: ${error}`)
+      }
+    }
 
     // Update campaign to sent status
     const { error: sentError } = await databaseService.supabase
       .from(updateTable)
       .update({
         status: 'sent',
-        delivered_count: eligibleContacts.length,
+        delivered_count: successCount,
         sent_at: new Date().toISOString()
       })
       .eq('id', campaignId)
@@ -114,6 +178,9 @@ export async function POST(
     return NextResponse.json({
       message: `${campaignType.charAt(0).toUpperCase() + campaignType.slice(1)} campaign sent successfully`,
       recipients: eligibleContacts.length,
+      successful: successCount,
+      failed: failCount,
+      errors: errors.length > 0 ? errors.slice(0, 5) : undefined,
       campaign_id: campaignId
     })
 

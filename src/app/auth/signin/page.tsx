@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   Loader2
 } from 'lucide-react'
+import Checkbox from '@/components/ui/Checkbox'
 
 function SignInForm() {
   const [showPassword, setShowPassword] = useState(false)
@@ -131,16 +132,12 @@ function SignInForm() {
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                name="rememberMe"
-                checked={formData.rememberMe}
-                onChange={handleInputChange}
-                className="rounded border-gray-600 bg-gray-700 text-white focus:ring-white mr-3"
-              />
-              <label className="text-sm text-gray-400">Remember me</label>
-            </div>
+            <Checkbox
+              name="rememberMe"
+              label="Remember me"
+              checked={formData.rememberMe}
+              onChange={handleInputChange}
+            />
             <Link href="/auth/forgot-password" className="text-sm text-white hover:underline">
               Forgot password?
             </Link>

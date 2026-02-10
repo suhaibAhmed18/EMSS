@@ -7,8 +7,9 @@ import crypto from 'crypto'
 interface User {
   id: string
   email: string
+  firstName?: string
+  lastName?: string
   name?: string
-  lastname?: string
   avatar?: string
   emailVerified?: boolean
 }
@@ -16,8 +17,9 @@ interface User {
 interface DatabaseUser {
   id: string
   email: string
+  first_name: string | null
+  last_name: string | null
   name: string | null
-  lastname: string | null
   password_hash: string
   email_verified: boolean
   created_at: string
@@ -70,8 +72,9 @@ class AuthServer {
       return {
         id: user.id,
         email: user.email,
+        firstName: user.first_name || undefined,
+        lastName: user.last_name || undefined,
         name: user.name || undefined,
-        lastname: user.lastname || undefined,
         emailVerified: user.email_verified
       }
     } catch (error) {
@@ -88,7 +91,7 @@ class AuthServer {
     return user
   }
 
-  async signUp(email: string, password: string, name?: string, lastname?: string): Promise<{ user: User, needsVerification: boolean }> {
+  async signUp(email: string, password: string, name?: string, plan?: string, firstName?: string, lastName?: string): Promise<{ user: User, needsVerification: boolean }> {
     const supabase = getSupabaseAdmin()
     
     try {
@@ -107,15 +110,28 @@ class AuthServer {
       const userId = crypto.randomUUID()
       const hashedPassword = this.hashPassword(password)
       
+      // Parse firstName and lastName from name if not provided separately
+      let userFirstName = firstName
+      let userLastName = lastName
+      
+      if (!userFirstName && !userLastName && name) {
+        const nameParts = name.trim().split(' ')
+        userFirstName = nameParts[0]
+        userLastName = nameParts.slice(1).join(' ') || undefined
+      }
+      
       const { data: user, error } = await supabase
         .from('users')
         .insert({
           id: userId,
           email,
           name: name || email.split('@')[0],
-          lastname: lastname || null,
+          first_name: userFirstName,
+          last_name: userLastName,
           password_hash: hashedPassword,
-          email_verified: false // Require email verification
+          email_verified: false, // Require email verification
+          subscription_plan: plan || 'starter',
+          subscription_status: 'pending' // Will be activated after payment
         })
         .select()
         .single()
@@ -129,12 +145,12 @@ class AuthServer {
       try {
         const verificationToken = tokenService.createVerificationToken(email)
         await emailService.sendVerificationEmail(email, verificationToken)
-        console.log(`✅ User registered, verification email sent to: ${email}`)
+        console.log(`✅ User registered: ${email}, verification email sent`)
       } catch (emailError) {
         console.error('Failed to send verification email:', emailError)
-        // In development, don't fail the registration
+        // Don't fail registration if email fails
         if (process.env.NODE_ENV === 'development') {
-          console.log('🔧 Development mode: Verification email would be sent in production')
+          console.log('🔧 Development mode: Email would be sent in production')
         }
       }
 
@@ -142,11 +158,12 @@ class AuthServer {
         user: {
           id: user.id,
           email: user.email,
+          firstName: user.first_name || undefined,
+          lastName: user.last_name || undefined,
           name: user.name || undefined,
-          lastname: user.lastname || undefined,
           emailVerified: user.email_verified
         },
-        needsVerification: true // Verification required
+        needsVerification: true
       }
     } catch (error) {
       console.error('❌ Signup error:', error)
@@ -190,8 +207,9 @@ class AuthServer {
     return {
       id: user.id,
       email: user.email,
+      firstName: user.first_name || undefined,
+      lastName: user.last_name || undefined,
       name: user.name || undefined,
-      lastname: user.lastname || undefined,
       emailVerified: user.email_verified
     }
   }

@@ -6,7 +6,6 @@ import {
   type ShopifyWebhook
 } from './types'
 import { ShopifyAPIError, RetryManager, errorLogger } from '../error-handling'
-import { ScopeVerifier, ScopeVerificationError } from './scope-verifier'
 
 interface PaginationInfo {
   hasNext: boolean
@@ -27,33 +26,10 @@ export class ShopifyClient {
   private shop: string
   private accessToken: string
   private apiVersion: string = '2024-01'
-  private scopesVerified: boolean = false
 
   constructor(shop: string, accessToken: string) {
     this.shop = shop
     this.accessToken = accessToken
-  }
-
-  /**
-   * Verify that the store has all required OAuth scopes
-   */
-  async verifyScopes(): Promise<void> {
-    if (this.scopesVerified) {
-      return // Already verified
-    }
-
-    const result = await ScopeVerifier.verifyScopes(this.shop, this.accessToken)
-    
-    if (!result.hasAllScopes) {
-      const reauthorizationUrl = ScopeVerifier.generateReauthorizationUrl(this.shop)
-      throw new ScopeVerificationError(
-        `Missing required scopes: ${result.missingScopes.join(', ')}. Please reauthorize the app.`,
-        result.missingScopes,
-        reauthorizationUrl
-      )
-    }
-
-    this.scopesVerified = true
   }
 
   /**
@@ -84,18 +60,6 @@ export class ShopifyClient {
             response.status,
             delay,
             { additionalData: { endpoint, shop: this.shop } }
-          )
-          await errorLogger.logError(error)
-          throw error
-        }
-
-        // Handle scope permission errors (403)
-        if (response.status === 403 && errorText.includes('scope')) {
-          const reauthorizationUrl = ScopeVerifier.generateReauthorizationUrl(this.shop)
-          const error = new ScopeVerificationError(
-            `Missing required permissions. Please reauthorize the app to grant necessary scopes.`,
-            [], // We don't know exact missing scopes from 403
-            reauthorizationUrl
           )
           await errorLogger.logError(error)
           throw error

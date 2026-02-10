@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Mail, MessageSquare, Save } from 'lucide-react'
+import { ArrowLeft, Mail, MessageSquare, Save, FileText } from 'lucide-react'
 import EmailCampaignBuilder from '@/components/campaigns/EmailCampaignBuilder'
 import SMSCampaignBuilder from '@/components/campaigns/SMSCampaignBuilder'
+import SaveTemplateModal from '@/components/campaigns/SaveTemplateModal'
+import TemplateSelector from '@/components/campaigns/TemplateSelector'
 
 interface Campaign {
   id: string
@@ -37,6 +39,9 @@ export default function EditCampaignPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [emailElements, setEmailElements] = useState<EmailElement[]>([])
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false)
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false)
+  const [storeId, setStoreId] = useState<string | null>(null)
 
   const campaignType = params.type as string
   const campaignId = params.id as string
@@ -53,6 +58,7 @@ export default function EditCampaignPage() {
       if (response.ok) {
         const data = await response.json()
         setCampaign(data.campaign)
+        setStoreId(data.campaign.store_id)
         
         // Load email elements if available
         if (data.campaign.json_content) {
@@ -210,6 +216,66 @@ export default function EditCampaignPage() {
     }
   }
 
+  const handleSaveAsTemplate = async (templateName: string) => {
+    if (!campaign || !storeId) return
+
+    try {
+      const content = campaignType === 'email' 
+        ? JSON.stringify(emailElements)
+        : campaign.message
+
+      // Extract variables from content
+      const variableRegex = /\{\{(\w+)\}\}/g
+      const variables: string[] = []
+      let match
+      const contentStr = typeof content === 'string' ? content : JSON.stringify(content)
+      while ((match = variableRegex.exec(contentStr)) !== null) {
+        if (!variables.includes(match[1])) {
+          variables.push(match[1])
+        }
+      }
+
+      const response = await fetch('/api/campaigns/templates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: templateName,
+          type: campaignType,
+          content,
+          variables,
+          store_id: storeId
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save template')
+      }
+
+      alert('Template saved successfully!')
+    } catch (error) {
+      console.error('Error saving template:', error)
+      throw error
+    }
+  }
+
+  const handleLoadTemplate = (template: any) => {
+    if (campaignType === 'email') {
+      try {
+        const elements = typeof template.content === 'string' 
+          ? JSON.parse(template.content)
+          : template.content
+        setEmailElements(elements)
+      } catch (e) {
+        console.error('Failed to parse template content:', e)
+        alert('Failed to load template')
+      }
+    } else {
+      setCampaign({ ...campaign, message: template.content })
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -255,10 +321,26 @@ export default function EditCampaignPage() {
           </div>
         </div>
 
-        <button onClick={handleSave} disabled={saving} className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
-          <Save className="w-4 h-4" />
-          {saving ? 'Saving...' : 'Save Changes'}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowTemplateSelector(true)}
+            className="btn-secondary"
+          >
+            <FileText className="w-4 h-4" />
+            Load Template
+          </button>
+          <button
+            onClick={() => setShowSaveTemplateModal(true)}
+            className="btn-secondary"
+          >
+            <FileText className="w-4 h-4" />
+            Save as Template
+          </button>
+          <button onClick={handleSave} disabled={saving} className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+            <Save className="w-4 h-4" />
+            {saving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
       </div>
 
         {/* Edit Form */}
@@ -389,6 +471,22 @@ export default function EditCampaignPage() {
             </div>
           </div>
         </div>
+
+      {/* Save Template Modal */}
+      <SaveTemplateModal
+        isOpen={showSaveTemplateModal}
+        onClose={() => setShowSaveTemplateModal(false)}
+        onSave={handleSaveAsTemplate}
+        type={campaignType as 'email' | 'sms'}
+      />
+
+      {/* Template Selector Modal */}
+      <TemplateSelector
+        isOpen={showTemplateSelector}
+        onClose={() => setShowTemplateSelector(false)}
+        onSelect={handleLoadTemplate}
+        type={campaignType as 'email' | 'sms'}
+      />
     </div>
   )
 }

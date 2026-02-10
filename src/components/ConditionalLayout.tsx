@@ -20,9 +20,10 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     pathname.startsWith('/help') ||
     pathname === '/contact' ||
     pathname.startsWith('/contact/') ||
-    pathname.startsWith('/status')
+    pathname.startsWith('/status') ||
+    pathname.startsWith('/pricing')
 
-  const isPremiumPublicPage = pathname === '/' || pathname.startsWith('/auth/')
+  const isPremiumPublicPage = pathname === '/' || pathname.startsWith('/auth/') || pathname.startsWith('/pricing')
   
   if (isPublicPage) {
     if (isPremiumPublicPage) {

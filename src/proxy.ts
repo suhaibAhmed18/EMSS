@@ -1,50 +1,69 @@
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export async function proxy(request: NextRequest) {
-  // Check for session token in cookies
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  
+  // Get session token from cookies
   const sessionToken = request.cookies.get('session-token')
-  const hasValidSession = sessionToken && sessionToken.value
-
-  // Validate session token format (should be UUID-based)
-  if (hasValidSession) {
-    const userId = sessionToken.value.replace('session-', '')
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-    
-    if (!uuidRegex.test(userId)) {
-      // Invalid session format, clear it
-      const response = NextResponse.next()
-      response.cookies.delete('session-token')
-      
-      // If trying to access protected route, redirect to login
-      const protectedRoutes = ['/dashboard', '/campaigns', '/contacts', '/automations', '/analytics', '/settings', '/stores']
-      const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
-      
-      if (isProtectedRoute) {
-        const redirectUrl = new URL('/auth/login', request.url)
-        redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
-        return NextResponse.redirect(redirectUrl)
-      }
-      
-      return response
+  
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    '/',
+    '/pricing',
+    '/auth/login',
+    '/auth/register',
+    '/auth/payment',
+    '/auth/payment-success',
+    '/auth/verify',
+    '/auth/forgot-password',
+    '/auth/reset-password',
+    '/terms',
+    '/privacy',
+    '/cookies',
+    '/contact',
+  ]
+  
+  // API routes that don't require authentication
+  const publicApiRoutes = [
+    '/api/auth/register',
+    '/api/auth/login',
+    '/api/auth/verify',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
+    '/api/auth/resend-verification',
+    '/api/payments/webhook',
+    '/api/payments/create-checkout',
+    '/api/payments/verify-session',
+    '/api/subscriptions/plans',
+    '/api/health',
+  ]
+  
+  // Check if the route is public
+  const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route))
+  const isPublicApiRoute = publicApiRoutes.some(route => pathname.startsWith(route))
+  
+  // Allow public routes and API routes
+  if (isPublicRoute || isPublicApiRoute) {
+    return NextResponse.next()
+  }
+  
+  // Check if user is authenticated
+  if (!sessionToken) {
+    // Redirect to login for protected routes
+    if (pathname.startsWith('/dashboard') || 
+        pathname.startsWith('/campaigns') || 
+        pathname.startsWith('/contacts') ||
+        pathname.startsWith('/automations') ||
+        pathname.startsWith('/analytics') ||
+        pathname.startsWith('/settings') ||
+        pathname.startsWith('/billing')) {
+      const url = new URL('/auth/login', request.url)
+      url.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(url)
     }
   }
-
-  // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/campaigns', '/contacts', '/automations', '/analytics', '/settings', '/stores']
-  const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
-
-  // If accessing a protected route without authentication, redirect to login
-  if (isProtectedRoute && !hasValidSession) {
-    const redirectUrl = new URL('/auth/login', request.url)
-    redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  // If authenticated user tries to access auth pages, redirect to dashboard
-  if (hasValidSession && request.nextUrl.pathname.startsWith('/auth/')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
+  
   return NextResponse.next()
 }
 
@@ -55,7 +74,7 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * - public folder
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],

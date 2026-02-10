@@ -7,7 +7,6 @@ interface User {
   id: string
   email: string
   name?: string
-  lastname?: string
   avatar?: string
 }
 
@@ -18,7 +17,7 @@ interface Session {
 
 interface SessionContextType extends Session {
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, name?: string, lastname?: string) => Promise<void>
+  signUp: (email: string, password: string, name?: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -95,11 +94,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }, 100)
   }
 
-  const signUp = async (email: string, password: string, name?: string, lastname?: string) => {
+  const signUp = async (email: string, password: string, name?: string) => {
     const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name, lastname })
+      body: JSON.stringify({ email, password, name })
     })
 
     if (!response.ok) {

@@ -94,9 +94,17 @@ export default function CampaignWizard({
         <button
           onClick={onNext}
           disabled={!canGoNext}
-          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          {currentStep === steps.length - 1 ? 'Finish' : 'Next'}
+          {currentStep === steps.length - 1 ? (
+            !canGoNext && canGoNext !== undefined ? (
+              <>Creating...</>
+            ) : (
+              <>Finish</>
+            )
+          ) : (
+            <>Next</>
+          )}
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>

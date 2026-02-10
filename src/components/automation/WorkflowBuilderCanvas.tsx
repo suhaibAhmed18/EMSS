@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   Mail, MessageSquare, Bell, Clock, Tag, GitBranch, 
-  Plus, Settings, Save, ArrowLeft, Trash2, Zap, GripVertical
+  Plus, Settings, Save, ArrowLeft, MoreVertical, Zap
 } from 'lucide-react'
+import Checkbox from '@/components/ui/Checkbox'
 
 interface WorkflowNode {
   id: string
@@ -19,6 +20,12 @@ interface WorkflowBuilderCanvasProps {
   initialName?: string
   onSave: (data: any) => void
   saving?: boolean
+}
+
+interface NodeEditorProps {
+  node: WorkflowNode
+  onUpdate: (data: any) => void
+  onClose: () => void
 }
 
 export default function WorkflowBuilderCanvas({
@@ -35,8 +42,6 @@ export default function WorkflowBuilderCanvas({
   const [stores, setStores] = useState<any[]>([])
   const [selectedStore, setSelectedStore] = useState('')
   const [isActive, setIsActive] = useState(true)
-  const [draggedNode, setDraggedNode] = useState<string | null>(null)
-  const [dragOverNode, setDragOverNode] = useState<string | null>(null)
 
   useEffect(() => {
     loadStores()
@@ -131,56 +136,6 @@ export default function WorkflowBuilderCanvas({
     if (selectedNode?.id === nodeId) {
       setSelectedNode(null)
     }
-  }
-
-  const handleDragStart = (e: React.DragEvent, nodeId: string) => {
-    if (nodeId === 'trigger') return
-    setDraggedNode(nodeId)
-    e.dataTransfer.effectAllowed = 'move'
-  }
-
-  const handleDragOver = (e: React.DragEvent, nodeId: string) => {
-    e.preventDefault()
-    if (nodeId === 'trigger' || !draggedNode || draggedNode === nodeId) return
-    setDragOverNode(nodeId)
-  }
-
-  const handleDragLeave = () => {
-    setDragOverNode(null)
-  }
-
-  const handleDrop = (e: React.DragEvent, targetNodeId: string) => {
-    e.preventDefault()
-    if (!draggedNode || draggedNode === targetNodeId || targetNodeId === 'trigger') return
-
-    const draggedIndex = nodes.findIndex(n => n.id === draggedNode)
-    const targetIndex = nodes.findIndex(n => n.id === targetNodeId)
-
-    if (draggedIndex === -1 || targetIndex === -1) return
-
-    // Reorder nodes
-    const newNodes = [...nodes]
-    const [removed] = newNodes.splice(draggedIndex, 1)
-    newNodes.splice(targetIndex, 0, removed)
-
-    // Update positions
-    newNodes.forEach((node, index) => {
-      if (node.type === 'trigger') {
-        node.position.y = 50
-      } else {
-        const actionIndex = newNodes.slice(0, index).filter(n => n.type !== 'trigger').length
-        node.position.y = 150 + (actionIndex * 120)
-      }
-    })
-
-    setNodes(newNodes)
-    setDraggedNode(null)
-    setDragOverNode(null)
-  }
-
-  const handleDragEnd = () => {
-    setDraggedNode(null)
-    setDragOverNode(null)
   }
 
   const handleSave = () => {
@@ -286,8 +241,6 @@ export default function WorkflowBuilderCanvas({
 
   const renderNode = (node: WorkflowNode) => {
     const isSelected = selectedNode?.id === node.id
-    const isDragging = draggedNode === node.id
-    const isDragOver = dragOverNode === node.id
     
     const getNodeIcon = () => {
       switch (node.type) {
@@ -329,17 +282,9 @@ export default function WorkflowBuilderCanvas({
     return (
       <div
         key={node.id}
-        draggable={node.type !== 'trigger'}
-        onDragStart={(e) => handleDragStart(e, node.id)}
-        onDragOver={(e) => handleDragOver(e, node.id)}
-        onDragLeave={handleDragLeave}
-        onDrop={(e) => handleDrop(e, node.id)}
-        onDragEnd={handleDragEnd}
-        className={`relative rounded-xl border-2 p-4 transition-all hover:shadow-lg ${
+        className={`relative rounded-xl border-2 p-4 cursor-pointer transition-all hover:shadow-lg ${
           isSelected ? 'border-[color:var(--accent-hi)] shadow-lg' : 'border-white/10'
-        } ${node.type === 'trigger' ? 'border-blue-400/50 bg-blue-400/5' : 'bg-white/[0.03] cursor-move'} ${
-          isDragging ? 'opacity-50' : ''
-        } ${isDragOver ? 'border-[color:var(--accent-hi)] border-dashed' : ''}`}
+        } ${node.type === 'trigger' ? 'border-blue-400/50 bg-blue-400/5' : 'bg-white/[0.03]'}`}
         style={{
           position: 'absolute',
           top: node.position.y,
@@ -349,11 +294,6 @@ export default function WorkflowBuilderCanvas({
         onClick={() => setSelectedNode(node)}
       >
         <div className="flex items-start gap-3">
-          {node.type !== 'trigger' && (
-            <div className="text-white/30 hover:text-white/60 cursor-grab active:cursor-grabbing">
-              <GripVertical className="w-4 h-4" />
-            </div>
-          )}
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
             node.type === 'trigger' ? 'bg-blue-400/20 text-blue-300' : 'bg-white/[0.06] text-white/70'
           }`}>
@@ -389,7 +329,7 @@ export default function WorkflowBuilderCanvas({
               }}
               className="text-white/40 hover:text-red-400"
             >
-              <Trash2 className="w-4 h-4" />
+              <MoreVertical className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -439,15 +379,11 @@ export default function WorkflowBuilderCanvas({
           </div>
           
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm text-white/70">
-              <input
-                type="checkbox"
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-                className="rounded border-white/20 bg-white/10 text-[color:var(--accent-hi)] focus:ring-[color:var(--accent-hi)] focus:ring-offset-0 checked:bg-[color:var(--accent-hi)] checked:border-[color:var(--accent-hi)]"
-              />
-              <span>Active</span>
-            </label>
+            <Checkbox
+              label="Active"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+            />
             <button 
               onClick={handleSave}
               disabled={saving}
@@ -592,7 +528,7 @@ export default function WorkflowBuilderCanvas({
 }
 
 // Node Editor Component
-function NodeEditor({ node, onUpdate, onClose }: any) {
+function NodeEditor({ node, onUpdate, onClose }: NodeEditorProps) {
   const [data, setData] = useState(node.data)
 
   const handleChange = (key: string, value: any) => {
@@ -621,13 +557,13 @@ function NodeEditor({ node, onUpdate, onClose }: any) {
 
   if (node.type === 'trigger') {
     return (
-      <div className="flex flex-col h-full">
+      <div>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Edit trigger</h3>
           <button onClick={onClose} className="text-white/40 hover:text-white text-2xl">×</button>
         </div>
 
-        <div className="space-y-6 flex-1 overflow-y-auto scrollbar-premium">
+        <div className="space-y-6">
           {/* Trigger Event */}
           <div>
             <label className="block text-sm font-medium text-white/70 mb-2">Trigger Event</label>
@@ -842,11 +778,9 @@ function NodeEditor({ node, onUpdate, onClose }: any) {
             <label className="block text-sm font-medium text-white/70 mb-3">Workflow Channel Settings</label>
             <div className="space-y-2">
               <label className="flex items-center gap-2 p-3 rounded-xl border border-white/10 bg-white/[0.02] cursor-pointer hover:bg-white/[0.04]">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={data.send_to_subscribed_only !== false}
                   onChange={(e) => handleChange('send_to_subscribed_only', e.target.checked)}
-                  className="rounded border-white/20 bg-white/10 text-[color:var(--accent-hi)] focus:ring-[color:var(--accent-hi)] focus:ring-offset-0 checked:bg-[color:var(--accent-hi)] checked:border-[color:var(--accent-hi)]"
                 />
                 <div className="flex-1">
                   <div className="text-sm text-white">Send to subscribed contacts only</div>
@@ -855,11 +789,9 @@ function NodeEditor({ node, onUpdate, onClose }: any) {
               </label>
               
               <label className="flex items-center gap-2 p-3 rounded-xl border border-white/10 bg-white/[0.02] cursor-pointer hover:bg-white/[0.04]">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={data.respect_quiet_hours || false}
                   onChange={(e) => handleChange('respect_quiet_hours', e.target.checked)}
-                  className="rounded border-white/20 bg-white/10 text-[color:var(--accent-hi)] focus:ring-[color:var(--accent-hi)] focus:ring-offset-0 checked:bg-[color:var(--accent-hi)] checked:border-[color:var(--accent-hi)]"
                 />
                 <div className="flex-1">
                   <div className="text-sm text-white">Respect quiet hours</div>
@@ -888,34 +820,19 @@ function NodeEditor({ node, onUpdate, onClose }: any) {
             </div>
           )}
         </div>
-
-        <div className="mt-6 pt-4 border-t border-white/10 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-white/20 text-white/70 rounded-lg hover:bg-white/[0.04]"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-[color:var(--accent-hi)] text-white rounded-lg hover:opacity-90"
-          >
-            Save
-          </button>
-        </div>
       </div>
     )
   }
 
   if (node.type === 'email') {
     return (
-      <div className="flex flex-col h-full">
+      <div>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Edit email</h3>
           <button onClick={onClose} className="text-white/40 hover:text-white text-2xl">×</button>
         </div>
 
-        <div className="space-y-4 flex-1">
+        <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-white/70 mb-2">Subject</label>
             <input
@@ -938,34 +855,19 @@ function NodeEditor({ node, onUpdate, onClose }: any) {
             />
           </div>
         </div>
-
-        <div className="mt-6 pt-4 border-t border-white/10 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-white/20 text-white/70 rounded-lg hover:bg-white/[0.04]"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-[color:var(--accent-hi)] text-white rounded-lg hover:opacity-90"
-          >
-            Save
-          </button>
-        </div>
       </div>
     )
   }
 
   if (node.type === 'sms') {
     return (
-      <div className="flex flex-col h-full">
+      <div>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Edit SMS</h3>
           <button onClick={onClose} className="text-white/40 hover:text-white text-2xl">×</button>
         </div>
 
-        <div className="space-y-4 flex-1">
+        <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-white/70 mb-2">Message</label>
             <textarea
@@ -979,34 +881,19 @@ function NodeEditor({ node, onUpdate, onClose }: any) {
             <p className="text-xs text-white/50 mt-1">{(data.message || '').length}/160</p>
           </div>
         </div>
-
-        <div className="mt-6 pt-4 border-t border-white/10 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-white/20 text-white/70 rounded-lg hover:bg-white/[0.04]"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-[color:var(--accent-hi)] text-white rounded-lg hover:opacity-90"
-          >
-            Save
-          </button>
-        </div>
       </div>
     )
   }
 
   if (node.type === 'delay') {
     return (
-      <div className="flex flex-col h-full">
+      <div>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Edit delay</h3>
           <button onClick={onClose} className="text-white/40 hover:text-white text-2xl">×</button>
         </div>
 
-        <div className="space-y-4 flex-1">
+        <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-white/70 mb-2">Duration (minutes)</label>
             <input
@@ -1018,34 +905,19 @@ function NodeEditor({ node, onUpdate, onClose }: any) {
             />
           </div>
         </div>
-
-        <div className="mt-6 pt-4 border-t border-white/10 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-white/20 text-white/70 rounded-lg hover:bg-white/[0.04]"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-[color:var(--accent-hi)] text-white rounded-lg hover:opacity-90"
-          >
-            Save
-          </button>
-        </div>
       </div>
     )
   }
 
   if (node.type === 'tag') {
     return (
-      <div className="flex flex-col h-full">
+      <div>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Tag contact</h3>
           <button onClick={onClose} className="text-white/40 hover:text-white text-2xl">×</button>
         </div>
 
-        <div className="space-y-4 flex-1">
+        <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-white/70 mb-2">Tag name</label>
             <input
@@ -1057,47 +929,17 @@ function NodeEditor({ node, onUpdate, onClose }: any) {
             />
           </div>
         </div>
-
-        <div className="mt-6 pt-4 border-t border-white/10 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-white/20 text-white/70 rounded-lg hover:bg-white/[0.04]"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-[color:var(--accent-hi)] text-white rounded-lg hover:opacity-90"
-          >
-            Save
-          </button>
-        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white">Edit action</h3>
         <button onClick={onClose} className="text-white/40 hover:text-white text-2xl">×</button>
       </div>
-      <p className="text-white/60 flex-1">Configuration for this action type is not yet available.</p>
-      
-      <div className="mt-6 pt-4 border-t border-white/10 flex justify-end gap-3">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 border border-white/20 text-white/70 rounded-lg hover:bg-white/[0.04]"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={onClose}
-          className="px-6 py-2 bg-[color:var(--accent-hi)] text-white rounded-lg hover:opacity-90"
-        >
-          Save
-        </button>
-      </div>
+      <p className="text-white/60">Configuration for this action type is not yet available.</p>
     </div>
   )
 }

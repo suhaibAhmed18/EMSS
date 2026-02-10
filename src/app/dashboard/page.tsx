@@ -17,8 +17,9 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { toast } from '@/components/ui/toaster'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import PhoneNumberCard from '@/components/dashboard/PhoneNumberCard'
 
 interface DashboardData {
   hasStore: boolean
@@ -60,15 +61,13 @@ interface DashboardData {
   }
   historicalData?: {
     revenueChange: number
-    contactChange: number
-    campaignChange: number
-    messageChange: number
+    contactsChange: number
+    campaignsChange: number
+    messagesChange: number
   }
   revenueHistory?: Array<{
     date: string
-    email: number
-    sms: number
-    total: number
+    revenue: number
   }>
 }
 
@@ -77,6 +76,7 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
@@ -179,24 +179,20 @@ export default function DashboardPage() {
     }
   }
 
-  const exportDashboard = async () => {
+  const handleExport = async () => {
     try {
-      toast({
-        type: 'info',
-        title: 'Exporting...',
-        description: 'Preparing your dashboard data',
-        duration: 2000
-      })
-
+      setExporting(true)
+      
       const response = await fetch(`/api/dashboard/export?timeRange=${timeRange}`)
       
       if (!response.ok) {
-        throw new Error('Failed to export dashboard data')
+        throw new Error('Export failed')
       }
 
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
+      a.style.display = 'none'
       a.href = url
       a.download = `dashboard-${timeRange}-${new Date().toISOString().split('T')[0]}.csv`
       document.body.appendChild(a)
@@ -206,17 +202,19 @@ export default function DashboardPage() {
 
       toast({
         type: 'success',
-        title: 'Export Complete!',
-        description: 'Your dashboard data has been downloaded',
+        title: 'Export Complete',
+        description: 'Your dashboard data has been exported successfully',
         duration: 3000
       })
     } catch (err) {
       toast({
         type: 'error',
         title: 'Export Failed',
-        description: err instanceof Error ? err.message : 'Failed to export data',
+        description: err instanceof Error ? err.message : 'Failed to export dashboard data',
         duration: 5000
       })
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -307,8 +305,8 @@ export default function DashboardPage() {
               Refresh
             </button>
 
-            <button onClick={exportDashboard} className="btn-ghost">
-              <Download className="w-4 h-4" />
+            <button onClick={handleExport} className="btn-ghost" disabled={exporting}>
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               Export
             </button>
           </div>
@@ -432,7 +430,7 @@ export default function DashboardPage() {
         <div className="card-premium p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-white">Recent Campaigns</h3>
-            <button className="btn-ghost">View All</button>
+            <a href="/campaigns" className="btn-ghost">View All</a>
           </div>
           <div className="text-center py-10">
             <Mail className="w-12 h-12 text-white/35 mx-auto mb-4" />
@@ -445,7 +443,7 @@ export default function DashboardPage() {
         <div className="card-premium p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-white">Top Performing Automations</h3>
-            <button className="btn-ghost">Manage All</button>
+            <a href="/automations" className="btn-ghost">Manage All</a>
           </div>
           <div className="text-center py-10">
             <TrendingUp className="w-12 h-12 text-white/35 mx-auto mb-4" />
@@ -458,41 +456,38 @@ export default function DashboardPage() {
   }
 
   // Generate stats from real data
+  const formatChange = (change: number) => {
+    const sign = change >= 0 ? '+' : ''
+    return `${sign}${change.toFixed(1)}%`
+  }
+
   const stats = [
     {
       name: 'Total Revenue',
       value: dashboardData.storeMetrics?.totalRevenue || '$0',
-      change: dashboardData.historicalData?.revenueChange 
-        ? `${dashboardData.historicalData.revenueChange > 0 ? '+' : ''}${dashboardData.historicalData.revenueChange.toFixed(1)}%`
-        : '+0%',
+      change: dashboardData.historicalData ? formatChange(dashboardData.historicalData.revenueChange) : '+0%',
       changeType: (dashboardData.historicalData?.revenueChange || 0) >= 0 ? 'positive' as const : 'negative' as const,
       icon: DollarSign,
     },
     {
       name: 'Email Campaigns',
       value: dashboardData.campaignStats.emailCampaigns.toString(),
-      change: dashboardData.historicalData?.campaignChange
-        ? `${dashboardData.historicalData.campaignChange > 0 ? '+' : ''}${dashboardData.historicalData.campaignChange.toFixed(1)}%`
-        : `+${dashboardData.campaignStats.smsCampaigns} SMS`,
-      changeType: (dashboardData.historicalData?.campaignChange || 0) >= 0 ? 'positive' as const : 'negative' as const,
+      change: `+${dashboardData.campaignStats.smsCampaigns} SMS`,
+      changeType: 'positive' as const,
       icon: Mail,
     },
     {
       name: 'Messages Sent',
       value: dashboardData.campaignStats.totalSent.toLocaleString(),
-      change: dashboardData.historicalData?.messageChange
-        ? `${dashboardData.historicalData.messageChange > 0 ? '+' : ''}${dashboardData.historicalData.messageChange.toFixed(1)}%`
-        : '+0%',
-      changeType: (dashboardData.historicalData?.messageChange || 0) >= 0 ? 'positive' as const : 'negative' as const,
+      change: dashboardData.historicalData ? formatChange(dashboardData.historicalData.messagesChange) : '+0%',
+      changeType: (dashboardData.historicalData?.messagesChange || 0) >= 0 ? 'positive' as const : 'negative' as const,
       icon: MessageSquare,
     },
     {
       name: 'Active Contacts',
       value: dashboardData.contactStats.totalContacts.toLocaleString(),
-      change: dashboardData.historicalData?.contactChange
-        ? `${dashboardData.historicalData.contactChange > 0 ? '+' : ''}${dashboardData.historicalData.contactChange.toFixed(1)}%`
-        : `${dashboardData.contactStats.emailConsent} email`,
-      changeType: (dashboardData.historicalData?.contactChange || 0) >= 0 ? 'positive' as const : 'negative' as const,
+      change: dashboardData.historicalData ? formatChange(dashboardData.historicalData.contactsChange) : `${dashboardData.contactStats.emailConsent} email`,
+      changeType: (dashboardData.historicalData?.contactsChange || 0) >= 0 ? 'positive' as const : 'negative' as const,
       icon: Users,
     },
   ]
@@ -535,8 +530,8 @@ export default function DashboardPage() {
             Refresh
           </button>
 
-          <button onClick={exportDashboard} className="btn-ghost">
-            <Download className="w-4 h-4" />
+          <button onClick={handleExport} className="btn-ghost" disabled={exporting}>
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             Export
           </button>
         </div>
@@ -611,6 +606,9 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Telnyx Phone Number */}
+      <PhoneNumberCard />
+
       {/* Store connected but metrics unavailable */}
       {dashboardData.hasStore && !dashboardData.storeMetrics && (
         <div className="card-premium p-6 border-amber-400/20">
@@ -637,9 +635,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-white">Revenue Overview</h3>
             <div className="flex items-center gap-2">
-              <button className="btn-ghost text-sm">Email</button>
-              <button className="btn-ghost text-sm">SMS</button>
-              <button className="btn-ghost text-sm">All</button>
+              <span className="text-sm text-white/55">Last 30 days</span>
             </div>
           </div>
           {dashboardData.revenueHistory && dashboardData.revenueHistory.length > 0 ? (
@@ -659,47 +655,25 @@ export default function DashboardPage() {
                   <YAxis 
                     stroke="rgba(255,255,255,0.5)"
                     tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }}
-                    tickFormatter={(value) => `$${value}`}
+                    tickFormatter={(value) => `$${value.toLocaleString()}`}
                   />
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: 'rgba(0,0,0,0.9)', 
                       border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '12px',
+                      borderRadius: '8px',
                       color: '#fff'
                     }}
-                    formatter={(value: any) => [`$${value}`, '']}
-                    labelFormatter={(label) => {
-                      const date = new Date(label)
-                      return date.toLocaleDateString()
-                    }}
-                  />
-                  <Legend 
-                    wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }}
+                    formatter={(value: number) => [`$${value.toFixed(2)}`, 'Revenue']}
+                    labelFormatter={(label) => new Date(label).toLocaleDateString()}
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="email" 
-                    stroke="#10b981" 
+                    dataKey="revenue" 
+                    stroke="rgb(16, 185, 129)" 
                     strokeWidth={2}
-                    dot={{ fill: '#10b981', r: 3 }}
-                    name="Email Revenue"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="sms" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    dot={{ fill: '#3b82f6', r: 3 }}
-                    name="SMS Revenue"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="total" 
-                    stroke="rgba(255,255,255,0.8)" 
-                    strokeWidth={2}
-                    dot={{ fill: '#fff', r: 3 }}
-                    name="Total Revenue"
+                    dot={{ fill: 'rgb(16, 185, 129)', r: 3 }}
+                    activeDot={{ r: 5 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -709,7 +683,7 @@ export default function DashboardPage() {
               <div className="text-center">
                 <BarChart3 className="w-12 h-12 text-white/35 mx-auto mb-4" />
                 <p className="text-white/60">No revenue data yet</p>
-                <p className="text-sm text-white/45">Data will appear after orders are synced</p>
+                <p className="text-sm text-white/45">Sync your Shopify store to see revenue analytics</p>
               </div>
             </div>
           )}
@@ -742,7 +716,7 @@ export default function DashboardPage() {
       <div className="card-premium p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Recent Campaigns</h3>
-          <button className="btn-ghost">View All</button>
+          <a href="/campaigns" className="btn-ghost">View All</a>
         </div>
 
         {dashboardData.recentCampaigns.length > 0 ? (
@@ -801,7 +775,7 @@ export default function DashboardPage() {
       <div className="card-premium p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Top Performing Automations</h3>
-          <button className="btn-ghost">Manage All</button>
+          <a href="/automations" className="btn-ghost">Manage All</a>
         </div>
 
         {dashboardData.topAutomations.length > 0 ? (

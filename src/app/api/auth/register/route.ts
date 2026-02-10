@@ -3,11 +3,11 @@ import { authServer } from '@/lib/auth/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, lastname, email, password } = await request.json()
+    const { firstName, lastName, email, password, plan } = await request.json()
 
-    if (!name || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       return NextResponse.json(
-        { error: 'Name, email and password are required' },
+        { error: 'First name, last name, email and password are required' },
         { status: 400 }
       )
     }
@@ -19,13 +19,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await authServer.signUp(email, password, name, lastname)
+    const result = await authServer.signUp(email, password, undefined, plan, firstName, lastName)
 
     return NextResponse.json({ 
       user: result.user,
       needsVerification: result.needsVerification,
       message: result.needsVerification 
-        ? 'Account created successfully! Please check your email to verify your account before signing in.'
+        ? 'Registration successful! Please complete payment to activate your account.'
         : 'Registration successful. You can now start using your account.'
     })
   } catch (error) {

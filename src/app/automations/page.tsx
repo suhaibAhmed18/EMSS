@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Search, Zap, Mail, MessageSquare, Plus, Edit, Trash2, Power, PowerOff } from 'lucide-react'
+import Checkbox from '@/components/ui/Checkbox'
 
 interface Automation {
   id: string
@@ -247,15 +248,12 @@ export default function AutomationsPage() {
                   <h3 className="text-sm font-semibold text-white/85 mb-3 uppercase tracking-wider">Type:</h3>
                   <div className="space-y-2">
                     {['Welcome', 'Cart Abandonment', 'Browse Abandonment', 'Post-Purchase', 'Special Occasions', 'Transactional'].map(type => (
-                      <label key={type} className="flex items-center gap-2 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={selectedType.includes(type)}
-                          onChange={() => toggleFilter('type', type)}
-                          className="cursor-pointer"
-                        />
-                        <span className="text-sm text-white/70 group-hover:text-white transition-colors">{type}</span>
-                      </label>
+                      <Checkbox
+                        key={type}
+                        label={type}
+                        checked={selectedType.includes(type)}
+                        onChange={() => toggleFilter('type', type)}
+                      />
                     ))}
                   </div>
                 </div>
@@ -265,15 +263,12 @@ export default function AutomationsPage() {
                   <h3 className="text-sm font-semibold text-white/85 mb-3 uppercase tracking-wider">Goal:</h3>
                   <div className="space-y-2">
                     {['Convert Subscribers', 'Recover Visitors', 'Cross-Sell', 'Build Loyalty', 'Reactivate Customers'].map(goal => (
-                      <label key={goal} className="flex items-center gap-2 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={selectedGoal.includes(goal)}
-                          onChange={() => toggleFilter('goal', goal)}
-                          className="cursor-pointer"
-                        />
-                        <span className="text-sm text-white/70 group-hover:text-white transition-colors">{goal}</span>
-                      </label>
+                      <Checkbox
+                        key={goal}
+                        label={goal}
+                        checked={selectedGoal.includes(goal)}
+                        onChange={() => toggleFilter('goal', goal)}
+                      />
                     ))}
                   </div>
                 </div>
@@ -283,15 +278,12 @@ export default function AutomationsPage() {
                   <h3 className="text-sm font-semibold text-white/85 mb-3 uppercase tracking-wider">Channel:</h3>
                   <div className="space-y-2">
                     {['Email', 'Email + SMS'].map(channel => (
-                      <label key={channel} className="flex items-center gap-2 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={selectedChannel.includes(channel)}
-                          onChange={() => toggleFilter('channel', channel)}
-                          className="cursor-pointer"
-                        />
-                        <span className="text-sm text-white/70 group-hover:text-white transition-colors">{channel}</span>
-                      </label>
+                      <Checkbox
+                        key={channel}
+                        label={channel}
+                        checked={selectedChannel.includes(channel)}
+                        onChange={() => toggleFilter('channel', channel)}
+                      />
                     ))}
                   </div>
                 </div>

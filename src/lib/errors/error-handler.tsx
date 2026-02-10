@@ -234,7 +234,7 @@ export class ErrorHandler {
 
     // Handle standard errors
     let category = ErrorCategory.SYSTEM
-    let severity = ErrorSeverity.MEDIUM
+    const severity = ErrorSeverity.MEDIUM
     let code = 'UNKNOWN_ERROR'
 
     // Categorize common errors
