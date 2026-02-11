@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authServer } from '@/lib/auth/server'
+import { withRateLimit, RATE_LIMITS } from '@/lib/security/rate-limit-middleware'
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitError = await withRateLimit(request, RATE_LIMITS.auth)
+  if (rateLimitError) return rateLimitError
+
   try {
     const { email } = await request.json()
 

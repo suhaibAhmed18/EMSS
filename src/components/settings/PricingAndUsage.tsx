@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { Package, TrendingUp, Info, ExternalLink, Check, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createBrowserClient } from '@supabase/ssr'
 import SubscriptionUpgradeModal from '@/components/SubscriptionUpgradeModal'
+import { getPlanLimits, getPlanPrice } from '@/lib/pricing/plans'
+import { useSession } from '@/lib/auth/session'
 
 export default function PricingAndUsage() {
   const [activeSubTab, setActiveSubTab] = useState('plan-overview')
@@ -13,16 +14,12 @@ export default function PricingAndUsage() {
   const [loading, setLoading] = useState(true)
   const [upgrading, setUpgrading] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  const [userId, setUserId] = useState<string>('')
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const { user } = useSession()
 
   useEffect(() => {
-    loadUserAndPlanData()
+    loadPlanData()
     
     // Check for upgrade success
     if (searchParams.get('upgraded') === 'true') {
@@ -31,21 +28,6 @@ export default function PricingAndUsage() {
       router.replace('/settings')
     }
   }, [searchParams])
-
-  const loadUserAndPlanData = async () => {
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserId(user.id)
-      }
-      
-      // Load plan data
-      await loadPlanData()
-    } catch (error) {
-      console.error('Failed to load user data:', error)
-    }
-  }
 
   const loadPlanData = async () => {
     try {
@@ -62,8 +44,13 @@ export default function PricingAndUsage() {
   }
 
   const openUpgradeModal = () => {
-    setShowUpgradeModal(true)
-  }
+    if (!user) {
+      alert('Please log in to upgrade your plan');
+      router.push('/auth/login');
+      return;
+    }
+    setShowUpgradeModal(true);
+  };
 
   if (loading) {
     return (
@@ -92,6 +79,22 @@ export default function PricingAndUsage() {
         <h3 className="text-xl font-semibold text-white mb-2">
           You're currently on the {planData?.plan || 'Free'} plan
         </h3>
+        
+        {/* Expiry Warning */}
+        {planData?.isExpired && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4">
+            <p className="text-red-400 text-sm">
+              Your subscription has expired. Please upgrade to continue using campaigns and automations.
+            </p>
+          </div>
+        )}
+        
+        {planData?.expiresAt && !planData?.isExpired && (
+          <p className="text-white/60 text-sm mb-2">
+            Expires on {new Date(planData.expiresAt).toLocaleDateString()}
+          </p>
+        )}
+        
         <p className="text-white/60 mb-6">
           {currentPlan === 'professional' || currentPlan === 'enterprise' 
             ? 'You have access to all premium features'
@@ -102,7 +105,7 @@ export default function PricingAndUsage() {
             onClick={openUpgradeModal}
             className="btn-primary inline-flex items-center"
           >
-            Upgrade Plan
+            {planData?.isExpired ? 'Renew Plan' : 'Upgrade Plan'}
           </button>
         )}
       </div>
@@ -137,11 +140,12 @@ export default function PricingAndUsage() {
       {activeSubTab === 'add-ons' && <AddOns />}
 
       {/* Upgrade Modal */}
-      {showUpgradeModal && userId && (
+      {showUpgradeModal && user && (
         <SubscriptionUpgradeModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
-          userId={userId}
+          userId={user.id}
+          isExpired={planData?.isExpired || false}
         />
       )}
     </div>
@@ -157,15 +161,11 @@ function PlanOverview({ planData, onUpgrade }: any) {
     ? (usage.emailsSent / usage.emailsLimit) * 100 
     : 0
 
-  // Get plan limits
-  const planLimits: Record<string, { emails: number, contacts: number, price: number }> = {
-    free: { emails: 500, contacts: 250, price: 0 },
-    starter: { emails: 5000, contacts: 1000, price: 0 },
-    professional: { emails: 50000, contacts: 10000, price: 49 },
-    enterprise: { emails: 500000, contacts: 100000, price: 99 }
-  }
-
-  const limits = planLimits[currentPlan] || planLimits.free
+  // Get plan limits - CONSISTENT WITH DATABASE
+  const limits = getPlanLimits(currentPlan)
+  
+  // Get plan price
+  const planPrice = currentPlan === 'free' ? 0 : getPlanPrice(currentPlan) || 0
 
   return (
     <div className="space-y-6">
@@ -176,7 +176,7 @@ function PlanOverview({ planData, onUpgrade }: any) {
               {planData?.plan || 'Free'} plan
             </h3>
             <p className="text-sm text-white/60 mt-1">
-              ${limits.price}/month
+              ${planPrice}/month
             </p>
           </div>
           {currentPlan !== 'enterprise' && (
@@ -192,21 +192,21 @@ function PlanOverview({ planData, onUpgrade }: any) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white/[0.02] rounded-lg p-4">
             <div className="text-2xl font-bold text-white mb-1">
-              {limits.emails.toLocaleString()}
+              {limits.emailsPerMonth?.toLocaleString() || '0'}
             </div>
             <div className="text-sm text-white/60">Emails per month</div>
           </div>
           <div className="bg-white/[0.02] rounded-lg p-4">
             <div className="text-2xl font-bold text-white mb-1">
-              {limits.contacts.toLocaleString()}
+              {limits.contacts?.toLocaleString() || '0'}
             </div>
             <div className="text-sm text-white/60">Contacts</div>
           </div>
           <div className="bg-white/[0.02] rounded-lg p-4">
             <div className="text-2xl font-bold text-white mb-1">
-              {currentPlan === 'professional' || currentPlan === 'enterprise' ? 'Unlimited' : 'Limited'}
+              {limits.smsPerMonth?.toLocaleString() || '0'}
             </div>
-            <div className="text-sm text-white/60">SMS campaigns</div>
+            <div className="text-sm text-white/60">SMS per month</div>
           </div>
         </div>
 
@@ -221,7 +221,7 @@ function PlanOverview({ planData, onUpgrade }: any) {
           <div className="bg-white/[0.02] rounded-lg p-4">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm text-white/70">
-                {usage.emailsSent || 0} of {limits.emails.toLocaleString()} emails sent this billing cycle
+                {usage.emailsSent || 0} of {limits.emailsPerMonth?.toLocaleString() || '0'} emails sent this billing cycle
               </span>
               {currentPlan !== 'enterprise' && (
                 <button 
@@ -268,29 +268,36 @@ function getPlanFeatures(plan: string): string[] {
     free: [
       '500 emails per month',
       '250 contacts',
+      '100 SMS per month',
       'Basic email templates',
       'Email support'
     ],
     starter: [
       '5,000 emails per month',
       '1,000 contacts',
+      '500 SMS per month',
+      '5 automation workflows',
       'All email templates',
-      'Basic automation',
-      'Email & chat support'
+      'Basic analytics',
+      'Email support',
+      'Telnyx phone number'
     ],
     professional: [
-      '50,000 emails per month',
+      '20,000 emails per month',
       '10,000 contacts',
+      '2,000 SMS per month',
+      '20 automation workflows',
       'Advanced automation',
-      'SMS campaigns',
       'A/B testing',
       'Priority support',
       'Custom domains',
       'Advanced analytics'
     ],
     enterprise: [
-      '500,000 emails per month',
+      '100,000+ emails per month',
       '100,000 contacts',
+      '50,000 SMS per month',
+      'Unlimited automations',
       'Everything in Professional',
       'Dedicated account manager',
       'Custom integrations',

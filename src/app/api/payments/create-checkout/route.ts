@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { getSupabaseAdmin } from '@/lib/database/client'
+import { PLAN_PRICES, validatePlanPrice, isValidPlan } from '@/lib/pricing/plans'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2026-01-28.clover',
@@ -16,6 +17,31 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Validate plan exists
+    if (!isValidPlan(plan)) {
+      return NextResponse.json(
+        { error: 'Invalid plan. Must be one of: starter, professional, enterprise' },
+        { status: 400 }
+      )
+    }
+
+    // Validate amount matches plan price (CRITICAL SECURITY FIX)
+    if (!validatePlanPrice(plan, amount)) {
+      const expectedPrice = PLAN_PRICES[plan]
+      console.error(`❌ Payment amount mismatch: expected ${expectedPrice}, got ${amount}`)
+      return NextResponse.json(
+        { 
+          error: 'Invalid amount for selected plan',
+          expected: expectedPrice,
+          received: amount
+        },
+        { status: 400 }
+      )
+    }
+
+    // Use server-side price only, never trust client
+    const correctAmount = PLAN_PRICES[plan]
 
     const supabase = getSupabaseAdmin()
 
@@ -48,7 +74,7 @@ export async function POST(request: NextRequest) {
               name: `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan`,
               description: `MarketingPro ${plan} subscription`,
             },
-            unit_amount: amount * 100, // Convert to cents
+            unit_amount: correctAmount * 100, // Use validated server-side price only
             recurring: {
               interval: 'month',
             },

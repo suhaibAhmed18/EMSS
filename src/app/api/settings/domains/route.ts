@@ -103,6 +103,10 @@ export async function POST(request: NextRequest) {
     if (existingDomain) {
       return NextResponse.json({ error: 'This domain is already added to your account' }, { status: 400 })
     }
+
+    // Initiate domain verification with Resend
+    const { resendEmailService } = await import('@/lib/email/resend-client')
+    const verificationResult = await resendEmailService.verifyDomain(domain)
     
     const { data, error } = await supabase
       .from('email_domains')
@@ -111,7 +115,10 @@ export async function POST(request: NextRequest) {
         domain,
         type: type || 'email',
         verified: false,
-        auto_warmup: false
+        auto_warmup: false,
+        resend_domain_id: verificationResult.domainId || null,
+        verification_status: verificationResult.success ? 'pending' : 'failed',
+        verification_started_at: new Date().toISOString()
       })
       .select()
       .single()
@@ -120,7 +127,10 @@ export async function POST(request: NextRequest) {
       throw error
     }
 
-    return NextResponse.json({ domain: data })
+    return NextResponse.json({ 
+      domain: data,
+      message: 'Domain added successfully. Verification can take up to 2 days to complete.'
+    })
   } catch (error) {
     console.error('Failed to add domain:', error)
     return NextResponse.json(

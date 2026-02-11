@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
+import crypto from 'crypto'
 import type { Database } from './supabase-types'
 import type {
   Contact,
@@ -284,53 +285,65 @@ export class TypedDatabaseClient {
 
 // Encryption utilities for sensitive data
 export class DataEncryption {
-  private static getEncryptionKey(): string {
+  private static getEncryptionKey(): Buffer {
     const key = process.env.DATA_ENCRYPTION_KEY
-    if (!key) {
-      throw new Error('DATA_ENCRYPTION_KEY environment variable is required')
+    if (!key || key.length < 32) {
+      throw new Error('DATA_ENCRYPTION_KEY must be at least 32 characters')
     }
-    return key
+    // Derive a proper 32-byte key using scrypt
+    return crypto.scryptSync(key, 'salt-for-encryption', 32)
   }
 
-  static async encrypt(data: string): Promise<string> {
-    // In a real implementation, use a proper encryption library like crypto
-    // For now, this is a placeholder that would use AES-256-GCM
+  static encrypt(data: string): string {
+    const algorithm = 'aes-256-gcm'
+    const key = this.getEncryptionKey()
+    const iv = crypto.randomBytes(16) // Initialization vector
+    
+    const cipher = crypto.createCipheriv(algorithm, key, iv)
+    
+    let encrypted = cipher.update(data, 'utf8', 'hex')
+    encrypted += cipher.final('hex')
+    
+    const authTag = cipher.getAuthTag()
+    
+    // Return: iv:authTag:encrypted
+    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`
+  }
+
+  static decrypt(encryptedData: string): string {
+    const algorithm = 'aes-256-gcm'
     const key = this.getEncryptionKey()
     
-    // This is a simplified example - in production, use proper crypto
-    const encoder = new TextEncoder()
-    const keyData = encoder.encode(key.slice(0, 32)) // Use first 32 chars as key
-    const dataBuffer = encoder.encode(data)
+    const parts = encryptedData.split(':')
+    if (parts.length !== 3) {
+      // Try legacy base64 decoding for migration
+      try {
+        return Buffer.from(encryptedData, 'base64').toString('utf-8')
+      } catch {
+        throw new Error('Invalid encrypted data format')
+      }
+    }
     
-    // In real implementation, use Web Crypto API or Node.js crypto
-    // For now, return base64 encoded data (NOT SECURE - just for structure)
-    return Buffer.from(data).toString('base64')
+    const iv = Buffer.from(parts[0], 'hex')
+    const authTag = Buffer.from(parts[1], 'hex')
+    const encrypted = parts[2]
+    
+    const decipher = crypto.createDecipheriv(algorithm, key, iv)
+    decipher.setAuthTag(authTag)
+    
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8')
+    decrypted += decipher.final('utf8')
+    
+    return decrypted
   }
 
-  static async decrypt(encryptedData: string): Promise<string> {
-    // In a real implementation, decrypt using the same algorithm
-    // For now, this is a placeholder
-    try {
-      return Buffer.from(encryptedData, 'base64').toString('utf-8')
-    } catch {
-      throw new Error('Failed to decrypt data')
-    }
-  }
-
-  static async hashForIndex(data: string): Promise<string> {
-    // Create a hash for indexing while preserving privacy
-    const encoder = new TextEncoder()
-    const dataBuffer = encoder.encode(data.toLowerCase().trim())
-    
-    // In real implementation, use a proper hash function like SHA-256
-    // For now, return a simple hash (NOT SECURE - just for structure)
-    let hash = 0
-    for (let i = 0; i < dataBuffer.length; i++) {
-      const char = dataBuffer[i]
-      hash = ((hash << 5) - hash) + char
-      hash = hash & hash // Convert to 32-bit integer
-    }
-    return hash.toString(16)
+  static hashForIndex(data: string): string {
+    // Use HMAC for searchable hash
+    const key = this.getEncryptionKey()
+    return crypto
+      .createHmac('sha256', key)
+      .update(data.toLowerCase().trim())
+      .digest('hex')
   }
 }
 

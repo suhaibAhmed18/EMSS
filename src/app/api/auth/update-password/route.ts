@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('password_hash')
       .eq('id', user.id)
-      .single()
+      .single<{ password_hash: string }>()
 
     if (fetchError || !dbUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
     // Update password in database
     const { error: updateError } = await supabase
       .from('users')
+      // @ts-expect-error - Supabase type generation issue with users table
       .update({ 
         password_hash: newPasswordHash,
         updated_at: new Date().toISOString()

@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import { getSupabaseAdmin } from '@/lib/database/client'
 
 export interface TokenData {
   email: string
@@ -6,72 +7,92 @@ export interface TokenData {
   expires: Date
 }
 
-// In a real app, you'd store these in a database
-// For demo purposes, we'll use in-memory storage
-const tokenStore = new Map<string, TokenData>()
-
 export class TokenService {
+  private supabase = getSupabaseAdmin()
+
   generateToken(): string {
     return crypto.randomBytes(32).toString('hex')
   }
 
-  createVerificationToken(email: string): string {
+  async createVerificationToken(email: string): Promise<string> {
     const token = this.generateToken()
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
     
-    tokenStore.set(token, {
-      email,
-      type: 'verification',
-      expires
-    })
+    const { error } = await this.supabase
+      .from('auth_tokens')
+      .insert({
+        token,
+        email,
+        type: 'verification',
+        expires_at: expires.toISOString()
+      })
+    
+    if (error) {
+      console.error('Failed to create verification token:', error)
+      throw new Error('Failed to create verification token')
+    }
     
     return token
   }
 
-  createPasswordResetToken(email: string): string {
+  async createPasswordResetToken(email: string): Promise<string> {
     const token = this.generateToken()
     const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
     
-    tokenStore.set(token, {
-      email,
-      type: 'password_reset',
-      expires
-    })
+    const { error } = await this.supabase
+      .from('auth_tokens')
+      .insert({
+        token,
+        email,
+        type: 'password_reset',
+        expires_at: expires.toISOString()
+      })
+    
+    if (error) {
+      console.error('Failed to create password reset token:', error)
+      throw new Error('Failed to create password reset token')
+    }
     
     return token
   }
 
-  validateToken(token: string, type: 'verification' | 'password_reset'): string | null {
-    const tokenData = tokenStore.get(token)
+  async validateToken(token: string, type: 'verification' | 'password_reset'): Promise<string | null> {
+    const { data, error } = await this.supabase
+      .from('auth_tokens')
+      .select('*')
+      .eq('token', token)
+      .eq('type', type)
+      .is('used_at', null)
+      .single()
     
-    if (!tokenData) {
+    if (error || !data) {
       return null
     }
     
-    if (tokenData.type !== type) {
+    if (new Date(data.expires_at) < new Date()) {
+      // Token expired, delete it
+      await this.supabase
+        .from('auth_tokens')
+        .delete()
+        .eq('token', token)
       return null
     }
     
-    if (tokenData.expires < new Date()) {
-      tokenStore.delete(token)
-      return null
-    }
-    
-    return tokenData.email
+    return data.email
   }
 
-  consumeToken(token: string): void {
-    tokenStore.delete(token)
+  async consumeToken(token: string): Promise<void> {
+    await this.supabase
+      .from('auth_tokens')
+      .update({ used_at: new Date().toISOString() })
+      .eq('token', token)
   }
 
-  // Clean up expired tokens (you'd run this periodically)
-  cleanupExpiredTokens(): void {
-    const now = new Date()
-    for (const [token, data] of tokenStore.entries()) {
-      if (data.expires < now) {
-        tokenStore.delete(token)
-      }
-    }
+  async cleanupExpiredTokens(): Promise<void> {
+    await this.supabase
+      .from('auth_tokens')
+      .delete()
+      .lt('expires_at', new Date().toISOString())
   }
 }
 

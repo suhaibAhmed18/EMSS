@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authServer } from '@/lib/auth/server'
+import { sessionManager } from '@/lib/auth/sessions'
 import { getSupabaseAdmin } from '@/lib/database/client'
 import { telnyxService } from '@/lib/telnyx/service'
 
@@ -66,9 +67,10 @@ export async function POST(request: NextRequest) {
     const user = await authServer.signIn(email, password, request)
 
     if (!user) {
+      // Generic error message to prevent user enumeration
       return NextResponse.json(
         { 
-          error: 'Invalid credentials',
+          error: 'Invalid email or password',
           remainingAttempts: rateLimit.remainingAttempts
         },
         { status: 401 }
@@ -93,7 +95,11 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('subscription_status, subscription_plan, telnyx_phone_number')
       .eq('id', user.id)
-      .single()
+      .single<{
+        subscription_status: string | null
+        subscription_plan: string | null
+        telnyx_phone_number: string | null
+      }>()
 
     if (userError) {
       console.error('Error fetching user data:', userError)
@@ -127,12 +133,17 @@ export async function POST(request: NextRequest) {
         phoneNumber = await telnyxService.assignPhoneNumber(user.id)
         
         // Update user record with phone number
-        await supabase
+        const { error: updateError } = await supabase
           .from('users')
+          // @ts-expect-error - Supabase type generation issue with users table
           .update({ telnyx_phone_number: phoneNumber })
           .eq('id', user.id)
 
-        console.log(`✅ Telnyx number ${phoneNumber} assigned to user ${user.id} on login`)
+        if (updateError) {
+          console.error('Failed to update Telnyx number:', updateError)
+        } else {
+          console.log(`✅ Telnyx number ${phoneNumber} assigned to user ${user.id} on login`)
+        }
       } catch (error) {
         console.error('Failed to assign Telnyx number on login:', error)
         // Don't fail login if phone number assignment fails
@@ -140,8 +151,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Update last login timestamp
-    await supabase
+    const { error: loginUpdateError } = await supabase
       .from('users')
+      // @ts-expect-error - Supabase type generation issue with users table
       .update({ 
         updated_at: new Date().toISOString()
       })
@@ -163,12 +175,14 @@ export async function POST(request: NextRequest) {
       needsVerification: false
     })
 
+    // Create secure session token
+    const sessionToken = await sessionManager.createSession(user.id, request)
+    
     // Set session cookie with secure options
-    const sessionToken = `session-${user.id}`
     response.cookies.set('session-token', sessionToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true, // Always use secure flag
+      sameSite: 'strict',
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/'
     })

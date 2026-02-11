@@ -4,9 +4,10 @@ import { getSupabaseAdmin } from '@/lib/database/client'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await authServer.getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -26,7 +27,7 @@ export async function GET(
     const { data: template, error } = await supabase
       .from('campaign_templates')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .in('store_id', storeIds)
       .single()
 
@@ -43,9 +44,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await authServer.getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -73,7 +75,7 @@ export async function PUT(
         variables,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .in('store_id', storeIds)
       .select()
       .single()
@@ -91,9 +93,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await authServer.getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -113,7 +116,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('campaign_templates')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .in('store_id', storeIds)
 
     if (error) {

@@ -124,6 +124,36 @@ export async function POST(request: NextRequest) {
 
       const store = stores[0] // Use first store for now
       console.log(`🏪 Using store: ${store.store_name} (${store.id})`)
+
+      // Check contact limit based on subscription plan
+      const { getSupabaseAdmin } = await import('@/lib/database/client')
+      const { getPlanLimits } = await import('@/lib/pricing/plans')
+      const supabase = getSupabaseAdmin()
+      
+      // Get user's subscription plan
+      const { data: userData } = await supabase
+        .from('users')
+        .select('subscription_plan')
+        .eq('id', user.id)
+        .single()
+
+      const planLimits = getPlanLimits(userData?.subscription_plan || 'Free')
+      
+      // Count existing contacts for this store
+      const { count: contactCount } = await supabase
+        .from('contacts')
+        .select('*', { count: 'exact', head: true })
+        .eq('store_id', store.id)
+
+      // Check if user has reached contact limit
+      if (contactCount !== null && contactCount >= planLimits.contacts) {
+        return NextResponse.json({
+          error: `Contact limit reached. Your ${userData?.subscription_plan || 'Free'} plan allows up to ${planLimits.contacts.toLocaleString()} contacts. Please upgrade your plan to add more contacts.`,
+          needsUpgrade: true,
+          currentCount: contactCount,
+          limit: planLimits.contacts
+        }, { status: 403 })
+      }
       
       // Add store_id to contact data
       const fullContactData = {

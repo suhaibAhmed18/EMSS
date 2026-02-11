@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRequireAuth } from '@/lib/auth/session'
+import SubscriptionExpiryBanner from '@/components/SubscriptionExpiryBanner'
 import { 
   Plus, 
   Mail, 
@@ -145,6 +146,9 @@ export default function CampaignsPage() {
 
   return (
     <div className="space-y-8">
+      {/* Subscription Expiry Banner */}
+      <SubscriptionExpiryBanner userId={user?.id} />
+
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>

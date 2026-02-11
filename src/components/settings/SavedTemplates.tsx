@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FileText, ExternalLink, Search, Mail, MessageSquare } from 'lucide-react'
+import { FileText, ExternalLink, Search, Mail, MessageSquare, Trash2 } from 'lucide-react'
 
 export default function SavedTemplates() {
   const [templates, setTemplates] = useState<any[]>([])
@@ -15,7 +15,7 @@ export default function SavedTemplates() {
 
   const loadTemplates = async () => {
     try {
-      const response = await fetch('/api/settings/templates')
+      const response = await fetch('/api/campaigns/templates')
       if (response.ok) {
         const data = await response.json()
         setTemplates(data.templates || [])
@@ -24,6 +24,27 @@ export default function SavedTemplates() {
       console.error('Failed to load templates:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    if (!confirm('Are you sure you want to delete this template?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/campaigns/templates/${templateId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        await loadTemplates()
+      } else {
+        alert('Failed to delete template')
+      }
+    } catch (error) {
+      console.error('Failed to delete template:', error)
+      alert('Failed to delete template')
     }
   }
 
@@ -96,7 +117,7 @@ export default function SavedTemplates() {
             {filteredTemplates.map((template) => (
               <div 
                 key={template.id}
-                className="border border-white/10 rounded-lg p-4 hover:border-white/20 transition-colors cursor-pointer group"
+                className="border border-white/10 rounded-lg p-4 hover:border-white/20 transition-colors group relative"
               >
                 <div className="aspect-video bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-lg mb-3 flex items-center justify-center">
                   {template.type === 'email' ? (
@@ -111,17 +132,23 @@ export default function SavedTemplates() {
                     {template.type === 'email' ? 'Email' : 'SMS'}
                   </span>
                 </div>
-                {template.subject && (
-                  <p className="text-xs text-white/60 mb-2 truncate">{template.subject}</p>
+                {template.content && (
+                  <p className="text-xs text-white/60 mb-2 line-clamp-2">
+                    {template.type === 'sms' 
+                      ? template.content 
+                      : template.content.replace(/<[^>]*>/g, '').substring(0, 100)
+                    }
+                  </p>
                 )}
                 <div className="flex items-center justify-between text-xs text-white/50 mt-3">
-                  <span>Saved {new Date(template.updatedAt || template.updated_at).toLocaleDateString()}</span>
-                  <a 
-                    href={`/campaigns/${template.type}/${template.id}/edit`}
-                    className="text-emerald-400 hover:text-emerald-300 transition-colors"
+                  <span>Saved {new Date(template.updated_at).toLocaleDateString()}</span>
+                  <button
+                    onClick={() => handleDeleteTemplate(template.id)}
+                    className="text-red-400 hover:text-red-300 transition-colors"
+                    title="Delete template"
                   >
-                    View
-                  </a>
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))}

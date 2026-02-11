@@ -62,6 +62,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdmin()
     
+    // Initiate email verification with Resend
+    const { resendEmailService } = await import('@/lib/email/resend-client')
+    const verificationResult = await resendEmailService.verifyEmail(email)
+    
     const { data, error } = await supabase
       .from('sender_email_addresses')
       .insert({
@@ -69,7 +73,9 @@ export async function POST(request: NextRequest) {
         email,
         status: 'Pending',
         verified_on: null,
-        is_shared: false
+        is_shared: false,
+        resend_email_id: verificationResult.emailId || null,
+        verification_status: verificationResult.success ? 'pending' : 'failed'
       })
       .select()
       .single()
@@ -78,9 +84,10 @@ export async function POST(request: NextRequest) {
       throw error
     }
 
-    // TODO: Send verification email
-
-    return NextResponse.json({ emailAddress: data })
+    return NextResponse.json({ 
+      emailAddress: data,
+      message: 'Email address added. Verification can take up to 2 days to complete.'
+    })
   } catch (error) {
     console.error('Failed to add email address:', error)
     return NextResponse.json(

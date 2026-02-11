@@ -160,7 +160,7 @@ export default function DomainsSettings() {
         setShowAddModal(false)
         setNewDomain('')
         setDomainType('email')
-        alert('Domain added successfully! Please configure DNS records and verify.')
+        alert(result.message || 'Domain added successfully! Verification can take up to 2 days.')
       } else {
         alert(result.error || 'Failed to add domain')
       }
@@ -391,6 +391,7 @@ export default function DomainsSettings() {
                 <ul className="text-xs text-blue-200 space-y-1 list-disc list-inside">
                   <li>Ensure DNS records are configured for your domain</li>
                   <li>DNS changes can take up to 48 hours to propagate</li>
+                  <li>Domain verification through Resend API can take up to 2 days</li>
                   <li>Verification will check if your domain is properly set up</li>
                 </ul>
               </div>

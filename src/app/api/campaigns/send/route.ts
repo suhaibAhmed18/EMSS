@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authServer } from '@/lib/auth/server'
 import { CampaignExecutionEngine } from '@/lib/campaigns/campaign-execution-engine'
 import { EmailCampaignRepository, SMSCampaignRepository } from '@/lib/database/repositories'
+import { requireActiveSubscription } from '@/lib/subscription/subscription-guard'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +19,16 @@ export async function POST(request: NextRequest) {
 
     if (!campaignType || !['email', 'sms'].includes(campaignType)) {
       return NextResponse.json({ error: 'Invalid campaign type' }, { status: 400 })
+    }
+
+    // Check subscription status and expiry
+    try {
+      await requireActiveSubscription(user.id)
+    } catch (error) {
+      return NextResponse.json({ 
+        error: error instanceof Error ? error.message : 'Subscription required',
+        needsUpgrade: true
+      }, { status: 403 })
     }
 
     console.log(`📧 Sending ${campaignType} campaign: ${campaignId}`)

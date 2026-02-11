@@ -7,6 +7,38 @@ export function proxy(request: NextRequest) {
   // Get session token from cookies
   const sessionToken = request.cookies.get('session-token')
   
+  // Create response
+  const response = NextResponse.next()
+  
+  // Security Headers
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
+  
+  // Content Security Policy
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://api.stripe.com https://*.supabase.co",
+    "frame-src 'self' https://js.stripe.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests"
+  ].join('; ')
+  
+  response.headers.set('Content-Security-Policy', csp)
+  
+  // HTTPS Redirect (in production)
+  if (process.env.NODE_ENV === 'production' && request.headers.get('x-forwarded-proto') !== 'https') {
+    return NextResponse.redirect(`https://${request.headers.get('host')}${request.nextUrl.pathname}`, 301)
+  }
+  
   // Public routes that don't require authentication
   const publicRoutes = [
     '/',
@@ -45,7 +77,7 @@ export function proxy(request: NextRequest) {
   
   // Allow public routes and API routes
   if (isPublicRoute || isPublicApiRoute) {
-    return NextResponse.next()
+    return response
   }
   
   // Check if user is authenticated
@@ -64,7 +96,7 @@ export function proxy(request: NextRequest) {
     }
   }
   
-  return NextResponse.next()
+  return response
 }
 
 export const config = {

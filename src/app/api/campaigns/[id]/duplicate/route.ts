@@ -79,10 +79,10 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: 'Campaign duplicated successfully',
-      campaign: {
+      campaign: newCampaign ? {
         ...newCampaign,
         type: campaignType
-      }
+      } : null
     })
   } catch (error) {
     console.error('Failed to duplicate campaign:', error)

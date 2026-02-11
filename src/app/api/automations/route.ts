@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authServer } from '@/lib/auth/server'
 import { databaseService } from '@/lib/database/service'
+import { requireActiveSubscription } from '@/lib/subscription/subscription-guard'
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,6 +51,16 @@ export async function POST(request: NextRequest) {
     const user = await authServer.getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check subscription status and expiry
+    try {
+      await requireActiveSubscription(user.id)
+    } catch (error) {
+      return NextResponse.json({ 
+        error: error instanceof Error ? error.message : 'Subscription required',
+        needsUpgrade: true
+      }, { status: 403 })
     }
 
     const body = await request.json()

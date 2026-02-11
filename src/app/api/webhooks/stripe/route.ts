@@ -36,13 +36,19 @@ export async function POST(request: NextRequest) {
           break
         }
 
+        // Calculate subscription end date (1 month from now)
+        const startDate = new Date()
+        const endDate = new Date(startDate)
+        endDate.setMonth(endDate.getMonth() + 1)
+        
         // Update user subscription status
         const { error: updateError } = await supabase
           .from('users')
           .update({
             subscription_status: 'active',
             subscription_plan: session.metadata?.planName || 'unknown',
-            subscription_start_date: new Date().toISOString(),
+            subscription_start_date: startDate.toISOString(),
+            subscription_end_date: endDate.toISOString(),
             stripe_customer_id: session.customer as string,
             payment_method: 'stripe',
           })

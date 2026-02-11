@@ -68,6 +68,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No valid contacts found in CSV' }, { status: 400 })
     }
 
+    // Check contact limit based on subscription plan
+    const { getSupabaseAdmin } = await import('@/lib/database/client')
+    const { getPlanLimits } = await import('@/lib/pricing/plans')
+    const supabase = getSupabaseAdmin()
+    
+    // Get user's subscription plan
+    const { data: userData } = await supabase
+      .from('users')
+      .select('subscription_plan')
+      .eq('id', user.id)
+      .single()
+
+    const planLimits = getPlanLimits(userData?.subscription_plan || 'Free')
+    
+    // Count existing contacts for this store
+    const { count: existingContactCount } = await supabase
+      .from('contacts')
+      .select('*', { count: 'exact', head: true })
+      .eq('store_id', storeId)
+
+    const currentCount = existingContactCount || 0
+    const newTotalCount = currentCount + contacts.length
+
+    // Check if import would exceed contact limit
+    if (newTotalCount > planLimits.contacts) {
+      const remainingSlots = planLimits.contacts - currentCount
+      return NextResponse.json({
+        error: `Contact limit exceeded. Your ${userData?.subscription_plan || 'Free'} plan allows up to ${planLimits.contacts.toLocaleString()} contacts. You currently have ${currentCount.toLocaleString()} contacts and are trying to import ${contacts.length.toLocaleString()} more. You can only import ${remainingSlots} more contact(s). Please upgrade your plan to import more contacts.`,
+        needsUpgrade: true,
+        currentCount,
+        limit: planLimits.contacts,
+        attemptedImport: contacts.length,
+        remainingSlots
+      }, { status: 403 })
+    }
+
     // Import contacts into database
     let successCount = 0
     let failCount = 0

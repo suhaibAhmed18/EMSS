@@ -1,8 +1,10 @@
 import { cookies } from 'next/headers'
 import { emailService } from '@/lib/email/service'
 import { tokenService } from './tokens'
+import { sessionManager } from './sessions'
 import { getSupabaseAdmin } from '@/lib/database/client'
 import crypto from 'crypto'
+import bcrypt from 'bcrypt'
 
 interface User {
   id: string
@@ -27,29 +29,37 @@ interface DatabaseUser {
 }
 
 class AuthServer {
-  private hashPassword(password: string): string {
-    return crypto.createHash('sha256').update(password).digest('hex')
+  private async hashPassword(password: string): Promise<string> {
+    const saltRounds = 12
+    return await bcrypt.hash(password, saltRounds)
   }
 
-  private verifyPassword(password: string, hashedPassword: string): boolean {
-    return this.hashPassword(password) === hashedPassword
+  private async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+    try {
+      return await bcrypt.compare(password, hashedPassword)
+    } catch {
+      return false
+    }
+  }
+
+  // Legacy SHA-256 verification for migration
+  private verifyPasswordSHA256(password: string, hashedPassword: string): boolean {
+    return crypto.createHash('sha256').update(password).digest('hex') === hashedPassword
   }
 
   async getCurrentUser(): Promise<User | null> {
     try {
       const cookieStore = await cookies()
-      const sessionToken = cookieStore.get('session-token')
+      const sessionCookie = cookieStore.get('session-token')
 
-      if (!sessionToken) {
+      if (!sessionCookie) {
         return null
       }
 
-      // Extract user ID from session token
-      const userId = sessionToken.value.replace('session-', '')
+      // Validate session from database
+      const userId = await sessionManager.validateSession(sessionCookie.value)
       
-      // Check if userId is a valid UUID format
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-      if (!uuidRegex.test(userId)) {
+      if (!userId) {
         // Clear invalid session
         cookieStore.delete('session-token')
         return null
@@ -65,6 +75,7 @@ class AuthServer {
       
       if (error || !user) {
         // Clear invalid session
+        await sessionManager.deleteSession(sessionCookie.value)
         cookieStore.delete('session-token')
         return null
       }
@@ -108,7 +119,7 @@ class AuthServer {
 
       // Create user with UUID
       const userId = crypto.randomUUID()
-      const hashedPassword = this.hashPassword(password)
+      const hashedPassword = await this.hashPassword(password)
       
       // Parse firstName and lastName from name if not provided separately
       let userFirstName = firstName
@@ -143,7 +154,7 @@ class AuthServer {
 
       // Send verification email
       try {
-        const verificationToken = tokenService.createVerificationToken(email)
+        const verificationToken = await tokenService.createVerificationToken(email)
         await emailService.sendVerificationEmail(email, verificationToken)
         console.log(`✅ User registered: ${email}, verification email sent`)
       } catch (emailError) {
@@ -194,12 +205,31 @@ class AuthServer {
     
     if (error || !user) {
       console.log('❌ User not found with email:', email)
-      throw new Error('Invalid credentials')
+      throw new Error('Invalid email or password')
     }
     
-    if (!this.verifyPassword(password, user.password_hash)) {
+    // Try bcrypt first, fallback to SHA-256 for migration
+    let passwordValid = false
+    if (user.password_hash.startsWith('$2')) {
+      // bcrypt hash (starts with $2a$, $2b$, or $2y$)
+      passwordValid = await this.verifyPassword(password, user.password_hash)
+    } else {
+      // Legacy SHA-256 hash - verify and upgrade
+      passwordValid = this.verifyPasswordSHA256(password, user.password_hash)
+      if (passwordValid) {
+        // Upgrade to bcrypt
+        const newHash = await this.hashPassword(password)
+        await supabase
+          .from('users')
+          .update({ password_hash: newHash })
+          .eq('id', user.id)
+        console.log('✅ Password upgraded to bcrypt for:', email)
+      }
+    }
+    
+    if (!passwordValid) {
       console.log('❌ Password verification failed for user:', email)
-      throw new Error('Invalid credentials')
+      throw new Error('Invalid email or password')
     }
 
     console.log('✅ Login successful for:', email)
@@ -215,7 +245,7 @@ class AuthServer {
   }
 
   async verifyEmail(token: string): Promise<boolean> {
-    const email = tokenService.validateToken(token, 'verification')
+    const email = await tokenService.validateToken(token, 'verification')
     if (!email) {
       return false
     }
@@ -233,7 +263,7 @@ class AuthServer {
       return false
     }
 
-    tokenService.consumeToken(token)
+    await tokenService.consumeToken(token)
     return true
   }
 
@@ -252,7 +282,7 @@ class AuthServer {
     }
 
     try {
-      const resetToken = tokenService.createPasswordResetToken(email)
+      const resetToken = await tokenService.createPasswordResetToken(email)
       await emailService.sendPasswordResetEmail(email, resetToken)
       console.log(`✅ Password reset email sent to ${email}`)
       return true
@@ -268,7 +298,7 @@ class AuthServer {
   }
 
   async resetPassword(token: string, newPassword: string): Promise<boolean> {
-    const email = tokenService.validateToken(token, 'password_reset')
+    const email = await tokenService.validateToken(token, 'password_reset')
     if (!email) {
       return false
     }
@@ -278,7 +308,7 @@ class AuthServer {
     // Find and update user
     const { error } = await supabase
       .from('users')
-      .update({ password_hash: this.hashPassword(newPassword) })
+      .update({ password_hash: await this.hashPassword(newPassword) })
       .eq('email', email)
     
     if (error) {
@@ -286,12 +316,18 @@ class AuthServer {
       return false
     }
 
-    tokenService.consumeToken(token)
+    await tokenService.consumeToken(token)
     return true
   }
 
   async signOut(): Promise<void> {
     const cookieStore = await cookies()
+    const sessionCookie = cookieStore.get('session-token')
+    
+    if (sessionCookie) {
+      await sessionManager.deleteSession(sessionCookie.value)
+    }
+    
     cookieStore.delete('session-token')
   }
 }

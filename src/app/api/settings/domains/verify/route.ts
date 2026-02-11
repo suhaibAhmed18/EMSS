@@ -31,13 +31,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Domain not found' }, { status: 404 })
     }
 
-    // Verify domain through Resend API
-    const isVerified = await resendEmailService.verifyDomain(domainData.domain)
+    // Check domain verification status through Resend API
+    let isVerified = false
+    let verificationStatus = 'pending'
+
+    if (domainData.resend_domain_id) {
+      const statusResult = await resendEmailService.checkDomainStatus(domainData.resend_domain_id)
+      isVerified = statusResult.verified
+      verificationStatus = statusResult.status
+    } else {
+      // If no resend_domain_id, try to create one
+      const verificationResult = await resendEmailService.verifyDomain(domainData.domain)
+      if (verificationResult.success && verificationResult.domainId) {
+        // Update with new domain ID
+        await supabase
+          .from('email_domains')
+          .update({ 
+            resend_domain_id: verificationResult.domainId,
+            verification_started_at: new Date().toISOString()
+          })
+          .eq('id', domainId)
+      }
+    }
 
     if (!isVerified) {
       return NextResponse.json({ 
-        error: 'Domain verification failed. Please ensure DNS records are properly configured.',
-        verified: false 
+        error: 'Domain verification is still pending. This can take up to 2 days. Please check back later.',
+        verified: false,
+        status: verificationStatus
       }, { status: 400 })
     }
 

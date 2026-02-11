@@ -13,63 +13,10 @@ import {
   MessageSquare,
   Loader2,
 } from 'lucide-react'
-
-interface Plan {
-  id: string
-  name: string
-  description: string
-  price: number
-  features: {
-    sms_credits: number | string
-    email_credits: number | string
-    contacts: number | string
-    automations: number | string
-  }
-  popular?: boolean
-}
-
-const defaultPlans: Plan[] = [
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 10,
-    description: 'Perfect for small businesses getting started',
-    features: {
-      sms_credits: 500,
-      email_credits: 5000,
-      contacts: 1000,
-      automations: 5,
-    },
-  },
-  {
-    id: 'professional',
-    name: 'Professional',
-    price: 20,
-    description: 'For growing businesses with more needs',
-    features: {
-      sms_credits: 2000,
-      email_credits: 20000,
-      contacts: 10000,
-      automations: 20,
-    },
-    popular: true,
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 30,
-    description: 'For large-scale operations',
-    features: {
-      sms_credits: 50000,
-      email_credits: 100000,
-      contacts: 'unlimited',
-      automations: 'unlimited',
-    },
-  },
-]
+import { SUBSCRIPTION_PLANS, formatFeatureValue, type SubscriptionPlan } from '@/lib/pricing/plans'
 
 export default function PricingPage() {
-  const [plans, setPlans] = useState<Plan[]>(defaultPlans)
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(SUBSCRIPTION_PLANS)
   const [loading, setLoading] = useState(true)
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
   const router = useRouter()
@@ -85,12 +32,14 @@ export default function PricingPage() {
         const data = await response.json()
         if (data.plans && data.plans.length > 0) {
           // Map database plans to UI format
-          const mappedPlans = data.plans.map((plan: any, index: number) => ({
+          const mappedPlans = data.plans.map((plan: any) => ({
             id: plan.name.toLowerCase(),
             name: plan.name,
             price: parseFloat(plan.price),
-            description: plan.description || defaultPlans[index]?.description || '',
-            features: plan.features || defaultPlans[index]?.features || {},
+            description: plan.description,
+            currency: plan.currency || 'USD',
+            billing_period: plan.billing_period || 'monthly',
+            features: plan.features,
             popular: plan.name === 'Professional',
           }))
           setPlans(mappedPlans)
@@ -108,14 +57,6 @@ export default function PricingPage() {
     setSelectedPlan(planId)
     // Redirect to registration with selected plan
     router.push(`/auth/register?plan=${planId}`)
-  }
-
-  const formatFeatureValue = (value: number | string): string => {
-    if (value === 'unlimited') return 'Unlimited'
-    if (typeof value === 'number') {
-      return value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value.toString()
-    }
-    return value
   }
 
   if (loading) {

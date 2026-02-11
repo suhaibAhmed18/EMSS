@@ -43,7 +43,7 @@ INSERT INTO users (
   'active',
   'professional',
   NOW(),
-  NOW() + INTERVAL '1 year',
+  NOW() + INTERVAL '1 month',
   'cus_test_123456',
   'sub_test_123456',
   '+15551234567',

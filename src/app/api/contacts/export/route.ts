@@ -28,18 +28,28 @@ export async function POST(request: NextRequest) {
 
     // Get user's stores
     const stores = await databaseService.getStoresByUserId(user.id)
+    
+    let contacts
+    let error
+    
     if (stores.length === 0) {
-      return NextResponse.json({ 
-        error: 'No store associated with user. Please connect a Shopify store first.' 
-      }, { status: 400 })
+      // No store connected - fetch all contacts for this user
+      console.log('No store found, fetching all user contacts')
+      const contactRepo = new ContactRepository(true)
+      const result = await contactRepo.getUserContacts(user.id)
+      contacts = result.data
+      error = result.error
+    } else {
+      // Use the first store
+      const storeId = stores[0].id
+      console.log('Store found, fetching store contacts')
+      
+      // Fetch all contacts from database
+      const contactRepo = new ContactRepository(true)
+      const result = await contactRepo.getStoreContacts(storeId)
+      contacts = result.data
+      error = result.error
     }
-
-    // Use the first store
-    const storeId = stores[0].id
-
-    // Fetch all contacts from database
-    const contactRepo = new ContactRepository(true)
-    const { data: contacts, error } = await contactRepo.getStoreContacts(storeId)
     
     if (error) {
       console.error('Failed to fetch contacts:', error)

@@ -49,6 +49,8 @@ export default function ContactsPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [syncingShopify, setSyncingShopify] = useState(false)
+  const [contactLimit, setContactLimit] = useState<number>(250)
+  const [currentPlan, setCurrentPlan] = useState<string>('Free')
   const [newContact, setNewContact] = useState({
     first_name: '',
     last_name: '',
@@ -82,7 +84,25 @@ export default function ContactsPage() {
   // Load contacts on component mount
   useEffect(() => {
     loadContacts()
+    loadContactLimit()
   }, [])
+
+  const loadContactLimit = async () => {
+    try {
+      const response = await fetch('/api/settings/pricing')
+      if (response.ok) {
+        const data = await response.json()
+        setCurrentPlan(data.plan || 'Free')
+        
+        // Import getPlanLimits dynamically
+        const { getPlanLimits } = await import('@/lib/pricing/plans')
+        const limits = getPlanLimits(data.plan || 'Free')
+        setContactLimit(limits.contacts)
+      }
+    } catch (error) {
+      console.error('Failed to load contact limit:', error)
+    }
+  }
 
   const loadContacts = async () => {
     try {
@@ -641,6 +661,19 @@ export default function ContactsPage() {
                   <span className="text-white/55">Total Contacts</span>
                   <span className="text-white font-medium">{contacts.length}</span>
                 </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/55">Contact Limit</span>
+                  <span className={`font-medium ${contacts.length >= contactLimit ? 'text-red-400' : 'text-white'}`}>
+                    {contacts.length.toLocaleString()} / {contactLimit === 100000 ? '∞' : contactLimit.toLocaleString()}
+                  </span>
+                </div>
+                {contacts.length >= contactLimit && (
+                  <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <p className="text-xs text-red-300">
+                      Contact limit reached. <a href="/settings?tab=pricing" className="underline">Upgrade plan</a>
+                    </p>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-white/55">Email Subscribers</span>
                   <span className="text-white font-medium">

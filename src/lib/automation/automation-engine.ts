@@ -3,6 +3,7 @@ import { AutomationWorkflowRepository, ContactRepository } from '../database/rep
 import { AutomationWorkflow } from '../database/types'
 import { WorkflowTriggerSystem, TriggerEvent } from './trigger-system'
 import { WorkflowActionExecutor, WorkflowAction, ActionExecutionResult, WorkflowExecutionContext } from './action-executor'
+import { checkStoreSubscriptionStatus } from '../subscription/subscription-guard'
 
 export interface WorkflowExecution {
   id: string
@@ -111,6 +112,13 @@ export class AutomationEngine {
     }
 
     try {
+      // Check subscription status before executing automation
+      const subscriptionStatus = await checkStoreSubscriptionStatus(workflow.store_id)
+      
+      if (!subscriptionStatus.isActive) {
+        throw new Error('Subscription expired. Automation execution blocked.')
+      }
+
       // Determine contact ID from trigger data
       const contactId = await this.extractContactId(triggerEvent)
       execution.contactId = contactId

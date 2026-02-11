@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authServer } from '@/lib/auth/server'
+import { withRateLimit, RATE_LIMITS } from '@/lib/security/rate-limit-middleware'
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitError = await withRateLimit(request, RATE_LIMITS.auth)
+  if (rateLimitError) return rateLimitError
+
   try {
     const { firstName, lastName, email, password, plan } = await request.json()
 
@@ -12,9 +17,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (password.length < 8) {
+    // Validate password strength
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/
+    if (!passwordRegex.test(password)) {
       return NextResponse.json(
-        { error: 'Password must be at least 8 characters long' },
+        { 
+          error: 'Password must be at least 12 characters and include uppercase, lowercase, number, and special character (@$!%*?&)' 
+        },
         { status: 400 }
       )
     }

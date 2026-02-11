@@ -154,6 +154,85 @@ export class ContactRepository extends ContactManager {
 
     return result as any
   }
+  async getUserContacts(
+    userId: string,
+    options?: {
+      limit?: number
+      offset?: number
+      emailConsent?: boolean
+      smsConsent?: boolean
+    }
+  ): Promise<DatabaseListResult<Contact>> {
+    // First get all stores for this user
+    const { data: userStores, error: storesError } = await this.client
+      .from('user_stores')
+      .select('store_id')
+      .eq('user_id', userId)
+
+    if (storesError) {
+      return { data: [], error: storesError, count: 0 }
+    }
+
+    // If user has no stores, return empty array
+    if (!userStores || userStores.length === 0) {
+      return { data: [], error: null, count: 0 }
+    }
+
+    const storeIds = userStores.map(us => us.store_id)
+
+    // Build query for contacts from all user's stores
+    let query = this.client
+      .from('contacts')
+      .select('*', { count: 'exact' })
+      .in('store_id', storeIds)
+
+    if (options?.emailConsent !== undefined) {
+      query = query.eq('email_consent', options.emailConsent)
+    }
+    if (options?.smsConsent !== undefined) {
+      query = query.eq('sms_consent', options.smsConsent)
+    }
+
+    if (options?.limit) {
+      query = query.limit(options.limit)
+    }
+    if (options?.offset) {
+      query = query.range(options.offset, options.offset + (options.limit || 10) - 1)
+    }
+
+    query = query.order('created_at', { ascending: false })
+
+    const { data, error, count } = await query
+
+    if (error) {
+      return { data: [], error, count: 0 }
+    }
+
+    // Decrypt all contacts - skip contacts that fail to decrypt
+    if (data && data.length > 0) {
+      const decryptedContacts: Contact[] = []
+      let failedCount = 0
+
+      for (const contact of data) {
+        try {
+          const decrypted = await this.decryptContact(contact as any)
+          decryptedContacts.push(decrypted)
+        } catch (error) {
+          failedCount++
+          console.error(`Failed to decrypt contact ${(contact as any).id}:`, error)
+        }
+      }
+
+      if (failedCount > 0) {
+        console.warn(`Skipped ${failedCount} contacts due to decryption errors`)
+      }
+
+      return { data: decryptedContacts as any, error: null, count: count || decryptedContacts.length }
+    }
+
+    return { data: [], error: null, count: 0 }
+  }
+
 
   async deleteContact(id: string): Promise<DatabaseResult<boolean>> {
     return this.delete('contacts', id) as any

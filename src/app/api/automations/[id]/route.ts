@@ -81,9 +81,9 @@ export async function PUT(
       updated_at: new Date().toISOString()
     }
     
-    // @ts-ignore - Supabase types are too strict for dynamic updates
-    const { data: updatedAutomation, error: updateError } = await databaseService.supabase
+    const { data: updatedAutomation, error: updateError} = await databaseService.supabase
       .from('automation_workflows')
+      // @ts-expect-error - Supabase types are too strict for dynamic updates
       .update(updateData)
       .eq('id', automationId)
       .select()

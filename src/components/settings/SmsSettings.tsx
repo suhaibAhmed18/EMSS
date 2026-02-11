@@ -11,7 +11,6 @@ export default function SmsSettings() {
     quietHoursEnabled: false,
     quietHoursStart: '00:00',
     quietHoursEnd: '00:00',
-    dailyLimit: 400,
     timezone: 'America/New_York'
   })
   const [loading, setLoading] = useState(true)
@@ -229,41 +228,6 @@ export default function SmsSettings() {
         <a href="#" className="text-sm text-[#16a085] hover:underline inline-flex items-center mt-4">
           Find out more <ExternalLink className="w-3 h-3 ml-1" />
         </a>
-      </div>
-
-      {/* Daily Sending Limits Section */}
-      <div className="card-premium p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Daily sending limits</h3>
-        <p className="text-sm text-white/60 mb-4">
-          Limit the number of SMS messages a customer can receive per day.
-        </p>
-        
-        <div className="flex items-center gap-4">
-          <label className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={true}
-              readOnly
-              className="w-5 h-5 rounded border-white/20 bg-white/5 text-[#16a085] focus:ring-[#16a085] focus:ring-offset-0"
-            />
-            <span className="ml-3 text-sm text-white">Count on more than</span>
-          </label>
-          <input
-            type="number"
-            value={settings.dailyLimit}
-            readOnly
-            className="input-premium w-24 bg-white/5 cursor-not-allowed opacity-60"
-            min="1"
-          />
-          <span className="text-white/60">SMS messages to a customer number</span>
-        </div>
-
-        <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-start gap-2">
-          <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-blue-200">
-            Daily sending limit is determined by your subscription plan. Upgrade your plan to increase this limit.
-          </p>
-        </div>
       </div>
     </div>
   )

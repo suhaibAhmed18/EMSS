@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Mail, MessageSquare, Users, Eye, MousePointer, DollarSign } from 'lucide-react'
+import { sanitizeHTML } from '@/lib/security/sanitize'
 
 interface Campaign {
   id: string
@@ -158,7 +159,7 @@ export default function ViewCampaignPage() {
                     <label className="block text-sm font-medium text-white/55 mb-2">Email Content</label>
                     <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 max-h-96 overflow-y-auto scrollbar-premium">
                       {campaign.html_content ? (
-                        <div dangerouslySetInnerHTML={{ __html: campaign.html_content }} />
+                        <div dangerouslySetInnerHTML={{ __html: sanitizeHTML(campaign.html_content) }} />
                       ) : (
                         <p className="text-white/60">No content available</p>
                       )}

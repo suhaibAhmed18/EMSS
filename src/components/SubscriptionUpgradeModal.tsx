@@ -27,15 +27,17 @@ interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
+  isExpired?: boolean;
 }
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-export default function SubscriptionUpgradeModal({ isOpen, onClose, userId }: UpgradeModalProps) {
+export default function SubscriptionUpgradeModal({ isOpen, onClose, userId: initialUserId, isExpired = false }: UpgradeModalProps) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
+  const [userId, setUserId] = useState<string>(initialUserId);
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -43,34 +45,118 @@ export default function SubscriptionUpgradeModal({ isOpen, onClose, userId }: Up
 
   useEffect(() => {
     if (isOpen) {
-      loadPlans();
+      initializeUser();
     }
   }, [isOpen]);
 
-  const loadPlans = async () => {
+  const initializeUser = async () => {
+    // If userId is not provided, fetch it
+    if (!userId || userId === '') {
+      console.log('No userId provided, fetching from session');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        console.log('User ID from session:', session.user.id);
+        setUserId(session.user.id);
+        // Load plans after getting userId
+        await loadPlansWithUserId(session.user.id);
+      } else {
+        console.error('No session found');
+        alert('Please log in to view upgrade options');
+        onClose();
+      }
+    } else {
+      // Load plans with provided userId
+      await loadPlansWithUserId(userId);
+    }
+  };
+
+  const loadPlansWithUserId = async (uid: string) => {
     setLoading(true);
     try {
-      console.log('Loading plans for user:', userId);
-      const { data, error } = await supabase.rpc('get_available_upgrades', {
-        p_user_id: userId
+      console.log('Loading plans for user:', uid);
+      
+      // Try using the RPC function first
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_available_upgrades', {
+        p_user_id: uid
       });
 
-      if (error) {
-        console.error('Error loading plans from RPC:', error);
-        throw error;
+      if (rpcError) {
+        console.warn('RPC function not available, using fallback:', rpcError);
+        // Fallback: Load plans directly and compare manually
+        await loadPlansDirectly(uid);
+        return;
       }
-      console.log('Plans loaded:', data);
-      setPlans(data || []);
+      
+      console.log('Plans loaded via RPC:', rpcData);
+      setPlans(rpcData || []);
     } catch (error) {
       console.error('Error loading plans:', error);
-      alert('Failed to load subscription plans. Please try again.');
+      // Try fallback method
+      try {
+        await loadPlansDirectly(uid);
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+        alert('Failed to load subscription plans. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const loadPlansDirectly = async (uid: string) => {
+    console.log('Loading plans directly from table');
+    
+    // Get user's current plan
+    const { data: userData } = await supabase
+      .from('users')
+      .select('subscription_plan')
+      .eq('id', uid)
+      .single();
+    
+    const currentPlan = userData?.subscription_plan || 'Starter';
+    console.log('Current plan:', currentPlan);
+    
+    // Get all plans
+    const { data: allPlans, error: plansError } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .eq('is_active', true)
+      .order('price', { ascending: true });
+    
+    if (plansError) {
+      console.error('Error loading plans:', plansError);
+      throw plansError;
+    }
+    
+    console.log('All plans:', allPlans);
+    
+    // Get current plan price
+    const currentPlanData = allPlans?.find(p => p.name.toLowerCase() === currentPlan.toLowerCase());
+    const currentPrice = currentPlanData?.price || 0;
+    
+    // Transform plans to match expected format
+    const transformedPlans = (allPlans || []).map(plan => ({
+      plan_id: plan.id,
+      plan_name: plan.name,
+      plan_description: plan.description || '',
+      plan_price: parseFloat(plan.price),
+      current_plan_price: currentPrice,
+      price_difference: parseFloat(plan.price) - currentPrice,
+      features: plan.features || {},
+      is_current_plan: plan.name.toLowerCase() === currentPlan.toLowerCase(),
+      can_upgrade: parseFloat(plan.price) > currentPrice
+    }));
+    
+    console.log('Transformed plans:', transformedPlans);
+    setPlans(transformedPlans);
+  };
+
   const handleUpgradeClick = (plan: Plan) => {
-    if (plan.is_current_plan) return;
+    console.log('Upgrade clicked for plan:', plan);
+    if (plan.is_current_plan) {
+      console.log('Cannot upgrade to current plan');
+      return;
+    }
     setSelectedPlan(plan);
   };
 
@@ -138,10 +224,10 @@ export default function SubscriptionUpgradeModal({ isOpen, onClose, userId }: Up
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#1a1a1a] rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-[#0a0f0d] rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto border border-white/10">
         {/* Header */}
-        <div className="sticky top-0 bg-[#1a1a1a] border-b border-gray-800 p-6">
+        <div className="sticky top-0 bg-[#0a0f0d] border-b border-white/10 p-6">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-white">
               {selectedPlan ? `Upgrade to ${selectedPlan.plan_name}` : 'Choose Your Plan'}
@@ -167,36 +253,74 @@ export default function SubscriptionUpgradeModal({ isOpen, onClose, userId }: Up
           ) : selectedPlan ? (
             // Upgrade Confirmation View
             <div className="max-w-2xl mx-auto">
+              {/* Current Plan Comparison */}
+              <div className="grid md:grid-cols-2 gap-4 mb-8">
+                <div className="bg-[#0f0f0f] rounded-xl p-6 border border-white/10">
+                  <h4 className="text-sm font-semibold text-white/60 mb-2">Current Plan</h4>
+                  <div className="text-2xl font-bold text-white mb-4">
+                    {plans.find(p => p.is_current_plan)?.plan_name || 'Free'}
+                  </div>
+                  <div className="space-y-2">
+                    {plans.find(p => p.is_current_plan)?.features.features?.slice(0, 3).map((feature, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm text-white/60">
+                        <svg className="w-4 h-4 text-white/40 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-[#16a085]/10 rounded-xl p-6 border-2 border-[#16a085]">
+                  <h4 className="text-sm font-semibold text-[#16a085] mb-2">Upgrading To</h4>
+                  <div className="text-2xl font-bold text-white mb-4">
+                    {selectedPlan.plan_name}
+                  </div>
+                  <div className="space-y-2">
+                    {selectedPlan.features.features?.slice(0, 3).map((feature, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm text-white/80">
+                        <svg className="w-4 h-4 text-[#16a085] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div className="text-center mb-8">
                 <div className="text-5xl font-bold text-white mb-2">
                   {formatPrice(selectedPlan.plan_price)}
-                  <span className="text-xl text-gray-400 font-normal">/month</span>
+                  <span className="text-xl text-white/60 font-normal">/month</span>
                 </div>
-                <p className="text-gray-400">Billed monthly • Cancel anytime</p>
+                <p className="text-white/60">Subscription will be extended by 1 month • Cancel anytime</p>
               </div>
 
-              <div className="bg-[#0f0f0f] rounded-lg p-6 mb-6">
-                <h3 className="text-lg font-semibold text-white mb-4">What's included:</h3>
+              <div className="bg-[#0f0f0f] rounded-xl p-6 mb-6 border border-white/10">
+                <h3 className="text-lg font-semibold text-white mb-4">What you'll get with this upgrade:</h3>
                 <div className="space-y-3">
                   {selectedPlan.features.features?.map((feature, index) => (
                     <div key={index} className="flex items-start gap-3">
-                      <svg className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-[#16a085] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span className="text-gray-300">{feature}</span>
+                      <span className="text-white/80">{feature}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-blue-900/20 border border-blue-800/30 rounded-lg p-4 mb-6">
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
                 <div className="flex gap-3">
                   <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
                   <div className="text-sm text-blue-200">
                     You'll be redirected to Stripe to complete your upgrade securely. 
-                    Your subscription will be extended by 1 month with the new plan.
+                    Your subscription will be extended by 1 month with the new plan. 
+                    The pricing and overview will be updated according to your new plan.
                   </div>
                 </div>
               </div>
@@ -204,14 +328,14 @@ export default function SubscriptionUpgradeModal({ isOpen, onClose, userId }: Up
               <div className="flex gap-4">
                 <button
                   onClick={() => setSelectedPlan(null)}
-                  className="flex-1 px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                  className="flex-1 btn-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleUpgradeNow}
                   disabled={upgrading}
-                  className="flex-1 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {upgrading ? 'Processing...' : 'Upgrade Now'}
                 </button>
@@ -223,68 +347,51 @@ export default function SubscriptionUpgradeModal({ isOpen, onClose, userId }: Up
               {plans.map((plan) => (
                 <div
                   key={plan.plan_id}
-                  className={`relative rounded-lg border-2 p-6 transition-all ${
+                  className={`relative rounded-xl border p-6 transition-all ${
                     plan.is_current_plan
-                      ? 'border-emerald-500 bg-emerald-900/10'
-                      : 'border-gray-800 bg-[#0f0f0f] hover:border-gray-700 cursor-pointer'
+                      ? 'border-[#16a085] bg-[#16a085]/5'
+                      : 'border-white/10 bg-[#0f0f0f] hover:border-white/20'
                   }`}
-                  onClick={() => !plan.is_current_plan && handleUpgradeClick(plan)}
                 >
                   {plan.is_current_plan && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-emerald-600 text-white text-xs font-semibold rounded-full">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#16a085] text-white text-xs font-semibold rounded-full">
                       Current Plan
                     </div>
                   )}
 
                   <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold text-white mb-2">{plan.plan_name}</h3>
-                    <div className="text-3xl font-bold text-white mb-1">
+                    <h3 className="text-xl font-bold text-white mb-4">{plan.plan_name}</h3>
+                    <div className="text-4xl font-bold text-white mb-1">
                       {formatPrice(plan.plan_price)}
-                      <span className="text-sm text-gray-400 font-normal">/mo</span>
+                      <span className="text-base text-white/60 font-normal">/mo</span>
                     </div>
-                    {!plan.is_current_plan && plan.price_difference > 0 && (
-                      <p className="text-sm text-emerald-400">
-                        +{formatPrice(plan.price_difference)} more
-                      </p>
-                    )}
-                    {!plan.is_current_plan && plan.price_difference < 0 && (
-                      <p className="text-sm text-blue-400">
-                        {formatPrice(Math.abs(plan.price_difference))} less
-                      </p>
-                    )}
                   </div>
 
-                  <p className="text-sm text-gray-400 mb-6 min-h-[3rem]">
+                  <p className="text-sm text-white/60 mb-6 text-center min-h-[3rem]">
                     {plan.plan_description}
                   </p>
 
                   <div className="space-y-3 mb-6">
-                    {plan.features.features?.slice(0, 5).map((feature, index) => (
+                    {plan.features.features?.map((feature, index) => (
                       <div key={index} className="flex items-start gap-2">
-                        <svg className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-5 h-5 text-[#16a085] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
-                        <span className="text-sm text-gray-300">{feature}</span>
+                        <span className="text-sm text-white/80">{feature}</span>
                       </div>
                     ))}
                   </div>
 
                   <button
                     onClick={() => !plan.is_current_plan && handleUpgradeClick(plan)}
-                    disabled={plan.is_current_plan}
-                    className={`w-full py-3 rounded-lg font-medium transition-colors ${
-                      plan.is_current_plan
-                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                        : plan.can_upgrade
-                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    disabled={plan.is_current_plan && !isExpired}
+                    className={`w-full py-3 rounded-xl font-medium transition-all duration-200 ${
+                      plan.is_current_plan && !isExpired
+                        ? 'bg-white/[0.04] text-white/40 border border-white/10 cursor-not-allowed'
+                        : 'btn-primary'
                     }`}
                   >
-                    {plan.is_current_plan
-                      ? 'Current Plan'
-                      : plan.can_upgrade
-                      ? 'Upgrade'
-                      : 'Downgrade'}
+                    {plan.is_current_plan && !isExpired ? 'Current Plan' : 'Upgrade'}
                   </button>
                 </div>
               ))}

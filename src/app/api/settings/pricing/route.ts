@@ -15,13 +15,18 @@ export async function GET(request: NextRequest) {
     // Get user subscription data
     const { data: userData, error } = await supabase
       .from('users')
-      .select('subscription_plan, subscription_status, subscription_start_date, subscription_end_date')
+      .select('subscription_plan, subscription_status, subscription_start_date, subscription_end_date, subscription_expires_at')
       .eq('id', user.id)
       .single()
 
     if (error) {
       throw error
     }
+
+    // Check if subscription is expired
+    const isExpired = userData.subscription_expires_at 
+      ? new Date(userData.subscription_expires_at) < new Date()
+      : false
 
     // Get subscription plan details to fetch limits
     const { data: planData } = await supabase
@@ -36,7 +41,23 @@ export async function GET(request: NextRequest) {
 
     // Get actual email usage for current billing cycle
     const billingStart = userData.subscription_start_date || new Date(new Date().setDate(1)).toISOString()
-    const billingEnd = userData.subscription_end_date || new Date(new Date().setMonth(new Date().getMonth() + 1, 0)).toISOString()
+    
+    // Calculate billing end date
+    let billingEnd: string
+    if (userData.subscription_end_date) {
+      billingEnd = userData.subscription_end_date
+    } else if (userData.subscription_start_date) {
+      // If we have a start date but no end date, calculate 1 month from start
+      const startDate = new Date(userData.subscription_start_date)
+      const endDate = new Date(startDate)
+      endDate.setMonth(endDate.getMonth() + 1)
+      billingEnd = endDate.toISOString()
+    } else {
+      // Fallback to end of current month
+      const now = new Date()
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      billingEnd = endOfMonth.toISOString()
+    }
 
     const { data: emailUsageData } = await supabase
       .from('email_usage')
@@ -73,6 +94,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       plan: userData.subscription_plan || 'Free',
       status: userData.subscription_status || 'active',
+      expiresAt: userData.subscription_expires_at,
+      isExpired: isExpired,
       usage: usageData
     })
   } catch (error) {

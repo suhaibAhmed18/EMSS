@@ -51,11 +51,17 @@ export async function POST(request: NextRequest) {
         }
 
         // Update user subscription status
+        const subscriptionStartDate = new Date()
+        const subscriptionExpiresAt = new Date()
+        subscriptionExpiresAt.setMonth(subscriptionExpiresAt.getMonth() + 1) // Expires after 1 month
+
         const { error: updateError } = await supabase
           .from('users')
           .update({
             subscription_status: 'active',
             subscription_plan: plan,
+            subscription_start_date: subscriptionStartDate.toISOString(),
+            subscription_expires_at: subscriptionExpiresAt.toISOString(),
             payment_id: session.id,
             stripe_customer_id: session.customer as string,
             stripe_subscription_id: session.subscription as string,
@@ -100,9 +106,17 @@ export async function POST(request: NextRequest) {
         // Update subscription status based on Stripe status
         const status = subscription.status === 'active' ? 'active' : 'inactive'
         
+        // Calculate new expiry date (1 month from now if active)
+        const updateData: any = { subscription_status: status }
+        if (status === 'active') {
+          const expiresAt = new Date()
+          expiresAt.setMonth(expiresAt.getMonth() + 1)
+          updateData.subscription_expires_at = expiresAt.toISOString()
+        }
+        
         await supabase
           .from('users')
-          .update({ subscription_status: status })
+          .update(updateData)
           .eq('id', userId)
 
         console.log(`✅ Subscription updated for user ${userId}: ${status}`)

@@ -8,6 +8,7 @@ import EmailBuilder from '@/components/campaigns/EmailBuilder'
 import { emailTemplates, EmailTemplate } from '@/lib/templates/email-templates'
 import { Mail, Check, Sparkles, Zap, Target, Eye, Edit, Search, Plus } from 'lucide-react'
 import Checkbox from '@/components/ui/Checkbox'
+import { sanitizeHTML } from '@/lib/security/sanitize'
 
 const WIZARD_STEPS = [
   { id: 'intro', title: 'Introduction', description: 'Learn about email campaigns' },
@@ -49,12 +50,10 @@ export default function NewEmailCampaignPage() {
 
   const loadSavedTemplates = async () => {
     try {
-      const response = await fetch('/api/templates?type=email')
+      const response = await fetch('/api/campaigns/templates?type=email')
       if (response.ok) {
         const data = await response.json()
-        // Filter only custom templates (user-created)
-        const customTemplates = data.templates.filter((t: any) => t.is_custom)
-        setSavedTemplates(customTemplates)
+        setSavedTemplates(data.templates || [])
       }
     } catch (error) {
       console.error('Failed to load saved templates:', error)
@@ -351,10 +350,26 @@ export default function NewEmailCampaignPage() {
                   <button
                     key={template.id}
                     onClick={() => {
-                      setSelectedTemplate(template)
-                      // Only set the HTML if switching to a different template or if no customized HTML exists
-                      if (selectedTemplate?.id !== template.id || !customizedHtml) {
-                        setCustomizedHtml(template.html)
+                      if (showSavedTemplates) {
+                        // For saved templates, create a compatible template object
+                        setSelectedTemplate({
+                          id: template.id,
+                          name: template.name,
+                          description: 'Custom template',
+                          category: 'custom',
+                          thumbnail: '',
+                          subject: campaignData.subject || 'Custom Email',
+                          preheader: '',
+                          html: template.content,
+                          variables: template.variables || []
+                        })
+                        setCustomizedHtml(template.content)
+                      } else {
+                        setSelectedTemplate(template)
+                        // Only set the HTML if switching to a different template or if no customized HTML exists
+                        if (selectedTemplate?.id !== template.id || !customizedHtml) {
+                          setCustomizedHtml(template.html)
+                        }
                       }
                     }}
                     className={`w-full text-left p-4 rounded-2xl border transition-all ${
@@ -369,10 +384,10 @@ export default function NewEmailCampaignPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-white font-semibold mb-1">{template.name}</h3>
-                        <p className="text-white/60 text-sm mb-2">{template.description}</p>
+                        <p className="text-white/60 text-sm mb-2">{showSavedTemplates ? 'Custom template' : template.description}</p>
                         <div className="flex items-center gap-2">
                           <span className="inline-block px-2 py-1 rounded-lg bg-white/5 text-white/60 text-xs capitalize">
-                            {template.category}
+                            {showSavedTemplates ? 'Custom' : template.category}
                           </span>
                           {selectedTemplate?.id === template.id && (
                             <span className="inline-flex items-center gap-1 text-emerald-400 text-xs font-medium">
@@ -427,7 +442,7 @@ export default function NewEmailCampaignPage() {
                     {selectedTemplate ? (
                       <div 
                         className="bg-white shadow-lg"
-                        dangerouslySetInnerHTML={{ __html: selectedTemplate.html }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHTML(showSavedTemplates && selectedTemplate.id !== 'scratch' ? selectedTemplate.html : selectedTemplate.html) }}
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center h-64 text-center">
@@ -459,16 +474,31 @@ export default function NewEmailCampaignPage() {
               }}
               onSaveAsTemplate={async (blocks, html, name) => {
                 try {
-                  const response = await fetch('/api/templates', {
+                  // Get user's store
+                  const storesResponse = await fetch('/api/stores')
+                  if (!storesResponse.ok) {
+                    alert('Failed to get store information')
+                    return
+                  }
+                  
+                  const storesData = await storesResponse.json()
+                  const stores = storesData.stores || []
+                  
+                  if (stores.length === 0) {
+                    alert('No store found. Please connect a store first.')
+                    return
+                  }
+                  
+                  const store = stores[0]
+                  
+                  const response = await fetch('/api/campaigns/templates', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                      store_id: store.id,
                       name,
-                      description: 'Custom template',
                       type: 'email',
-                      category: 'custom',
-                      subject: campaignData.subject || 'Custom Email',
-                      html,
+                      content: html,
                       variables: []
                     })
                   })
@@ -477,7 +507,8 @@ export default function NewEmailCampaignPage() {
                     alert('Template saved successfully!')
                     await loadSavedTemplates()
                   } else {
-                    alert('Failed to save template')
+                    const errorData = await response.json()
+                    alert(`Failed to save template: ${errorData.error || 'Unknown error'}`)
                   }
                 } catch (error) {
                   console.error('Failed to save template:', error)

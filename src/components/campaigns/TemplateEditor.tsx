@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Save, Eye, Code } from 'lucide-react'
+import { sanitizeHTML } from '@/lib/security/sanitize'
 
 interface TemplateEditorProps {
   type: 'email' | 'sms'
@@ -119,7 +120,7 @@ export default function TemplateEditor({
           {type === 'email' ? (
             <div
               className="prose prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHTML(content) }}
             />
           ) : (
             <div className="max-w-sm mx-auto">

@@ -21,7 +21,11 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('id, email, email_verified')
       .eq('email', email)
-      .single()
+      .single<{
+        id: string
+        email: string
+        email_verified: boolean
+      }>()
 
     if (error || !user) {
       // Don't reveal if email exists or not for security
@@ -38,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate new verification token
-    const verificationToken = tokenService.createVerificationToken(email)
+    const verificationToken = await tokenService.createVerificationToken(email)
 
     // Send verification email
     try {

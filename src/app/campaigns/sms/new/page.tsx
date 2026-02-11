@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useRequireAuth } from '@/lib/auth/session'
 import CampaignWizard from '@/components/campaigns/CampaignWizard'
 import { smsTemplates, SMSTemplate } from '@/lib/templates/sms-templates'
-import { MessageSquare, Check, Zap, Target, Users, Eye, Plus } from 'lucide-react'
+import { MessageSquare, Check, Zap, Target, Users, Eye, Plus, Save, X } from 'lucide-react'
 
 const WIZARD_STEPS = [
   { id: 'intro', title: 'Introduction', description: 'Learn about SMS campaigns' },
@@ -21,11 +21,82 @@ export default function NewSMSCampaignPage() {
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedTemplate, setSelectedTemplate] = useState<SMSTemplate | null>(null)
   const [customizedMessage, setCustomizedMessage] = useState('')
+  const [savedTemplates, setSavedTemplates] = useState<any[]>([])
+  const [showSavedTemplates, setShowSavedTemplates] = useState(false)
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [savingTemplate, setSavingTemplate] = useState(false)
   const [campaignData, setCampaignData] = useState({
     name: '',
     message: '',
     segmentId: ''
   })
+
+  useEffect(() => {
+    if (user) {
+      loadSavedTemplates()
+    }
+  }, [user])
+
+  const loadSavedTemplates = async () => {
+    try {
+      const response = await fetch('/api/campaigns/templates?type=sms')
+      if (response.ok) {
+        const data = await response.json()
+        setSavedTemplates(data.templates || [])
+      }
+    } catch (error) {
+      console.error('Failed to load saved templates:', error)
+    }
+  }
+
+  const handleSaveTemplate = async (templateName: string) => {
+    try {
+      setSavingTemplate(true)
+      
+      // Get user's store
+      const storesResponse = await fetch('/api/stores')
+      if (!storesResponse.ok) {
+        alert('Failed to get store information')
+        return
+      }
+      
+      const storesData = await storesResponse.json()
+      const stores = storesData.stores || []
+      
+      if (stores.length === 0) {
+        alert('No store found. Please connect a store first.')
+        return
+      }
+      
+      const store = stores[0]
+      
+      const response = await fetch('/api/campaigns/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          store_id: store.id,
+          name: templateName,
+          type: 'sms',
+          content: customizedMessage,
+          variables: selectedTemplate?.variables || []
+        })
+      })
+
+      if (response.ok) {
+        alert('Template saved successfully!')
+        await loadSavedTemplates()
+        setShowSaveModal(false)
+      } else {
+        const errorData = await response.json()
+        alert(`Failed to save template: ${errorData.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Failed to save template:', error)
+      alert('Failed to save template. Please try again.')
+    } finally {
+      setSavingTemplate(false)
+    }
+  }
 
   const handleStartFromScratch = () => {
     setSelectedTemplate({
@@ -182,48 +253,87 @@ export default function NewSMSCampaignPage() {
               </p>
             </div>
 
+            <div className="flex gap-4 mb-6 border-b border-white/10">
+              <button 
+                onClick={() => setShowSavedTemplates(false)}
+                className={`px-4 py-2 font-medium ${
+                  !showSavedTemplates 
+                    ? 'text-white border-b-2 border-emerald-400' 
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                Templates ({smsTemplates.length})
+              </button>
+              <button 
+                onClick={() => setShowSavedTemplates(true)}
+                className={`px-4 py-2 font-medium ${
+                  showSavedTemplates 
+                    ? 'text-white border-b-2 border-emerald-400' 
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                My Templates ({savedTemplates.length})
+              </button>
+            </div>
+
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Template List */}
               <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                 {/* Start from Scratch Button */}
-                <button
-                  onClick={() => {
-                    handleStartFromScratch()
-                  }}
-                  className="w-full text-left p-6 rounded-2xl border-2 border-dashed border-emerald-400/50 bg-emerald-400/5 hover:bg-emerald-400/10 transition-all"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-white font-semibold mb-1">Start from Scratch</h3>
-                      <p className="text-white/60 text-sm">Create your own custom SMS message</p>
+                {!showSavedTemplates && (
+                  <button
+                    onClick={() => {
+                      handleStartFromScratch()
+                    }}
+                    className="w-full text-left p-6 rounded-2xl border-2 border-dashed border-emerald-400/50 bg-emerald-400/5 hover:bg-emerald-400/10 transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-white font-semibold mb-1">Start from Scratch</h3>
+                        <p className="text-white/60 text-sm">Create your own custom SMS message</p>
+                      </div>
+                      {selectedTemplate?.id === 'scratch' && (
+                        <Check className="w-5 h-5 text-emerald-400" />
+                      )}
                     </div>
-                    {selectedTemplate?.id === 'scratch' && (
-                      <Check className="w-5 h-5 text-emerald-400" />
-                    )}
-                  </div>
-                  
-                  <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 mb-3">
-                    <p className="text-white/40 text-sm italic">Blank message - write your own</p>
-                  </div>
+                    
+                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 mb-3">
+                      <p className="text-white/40 text-sm italic">Blank message - write your own</p>
+                    </div>
 
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="px-2 py-1 rounded-lg bg-emerald-400/10 text-emerald-400">
-                      Blank Canvas
-                    </span>
-                    <span className="text-white/40">
-                      0 characters
-                    </span>
-                  </div>
-                </button>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="px-2 py-1 rounded-lg bg-emerald-400/10 text-emerald-400">
+                        Blank Canvas
+                      </span>
+                      <span className="text-white/40">
+                        0 characters
+                      </span>
+                    </div>
+                  </button>
+                )}
 
-                {smsTemplates.map((template) => (
+                {(showSavedTemplates ? savedTemplates : smsTemplates).map((template) => (
                   <button
                     key={template.id}
                     onClick={() => {
-                      setSelectedTemplate(template)
-                      // Only set the message if switching to a different template or if no message exists
-                      if (selectedTemplate?.id !== template.id || !customizedMessage) {
-                        setCustomizedMessage(template.message)
+                      if (showSavedTemplates) {
+                        // For saved templates, create a compatible template object
+                        setSelectedTemplate({
+                          id: template.id,
+                          name: template.name,
+                          description: 'Custom template',
+                          category: 'custom',
+                          message: template.content,
+                          characterCount: template.content.length,
+                          variables: template.variables || []
+                        })
+                        setCustomizedMessage(template.content)
+                      } else {
+                        setSelectedTemplate(template)
+                        // Only set the message if switching to a different template or if no message exists
+                        if (selectedTemplate?.id !== template.id || !customizedMessage) {
+                          setCustomizedMessage(template.message)
+                        }
                       }
                     }}
                     className={`w-full text-left p-6 rounded-2xl border transition-all ${
@@ -235,7 +345,7 @@ export default function NewSMSCampaignPage() {
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h3 className="text-white font-semibold mb-1">{template.name}</h3>
-                        <p className="text-white/60 text-sm">{template.description}</p>
+                        <p className="text-white/60 text-sm">{showSavedTemplates ? 'Custom template' : template.description}</p>
                       </div>
                       {selectedTemplate?.id === template.id && (
                         <Check className="w-5 h-5 text-emerald-400" />
@@ -243,19 +353,28 @@ export default function NewSMSCampaignPage() {
                     </div>
                     
                     <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 mb-3">
-                      <p className="text-white/80 text-sm">{template.message}</p>
+                      <p className="text-white/80 text-sm">{showSavedTemplates ? template.content : template.message}</p>
                     </div>
 
                     <div className="flex items-center justify-between text-xs">
                       <span className="px-2 py-1 rounded-lg bg-white/5 text-white/60 capitalize">
-                        {template.category}
+                        {showSavedTemplates ? 'Custom' : template.category}
                       </span>
                       <span className="text-white/40">
-                        {template.characterCount} characters
+                        {showSavedTemplates ? template.content.length : template.characterCount} characters
                       </span>
                     </div>
                   </button>
                 ))}
+                {(showSavedTemplates ? savedTemplates : smsTemplates).length === 0 && showSavedTemplates && (
+                  <div className="text-center py-12">
+                    <MessageSquare className="w-16 h-16 text-white/20 mx-auto mb-4" />
+                    <p className="text-white/60 mb-2">No saved templates yet</p>
+                    <p className="text-white/40 text-sm">
+                      Customize a template and click "Save as Template" to save it here
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Preview */}
@@ -304,12 +423,22 @@ export default function NewSMSCampaignPage() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <label className="text-white/80 font-medium">Message Text</label>
-                    <button
-                      onClick={() => setCustomizedMessage(selectedTemplate.message)}
-                      className="text-sm text-white/60 hover:text-white transition-colors"
-                    >
-                      Reset to original
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowSaveModal(true)}
+                        disabled={!customizedMessage || customizedMessage.length === 0}
+                        className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                      >
+                        <Save className="w-3 h-3" />
+                        Save as Template
+                      </button>
+                      <button
+                        onClick={() => setCustomizedMessage(selectedTemplate.message)}
+                        className="text-sm text-white/60 hover:text-white transition-colors"
+                      >
+                        Reset to original
+                      </button>
+                    </div>
                   </div>
                   <textarea
                     value={customizedMessage}
@@ -476,6 +605,83 @@ export default function NewSMSCampaignPage() {
           </div>
         )}
       </CampaignWizard>
+
+      {/* Save Template Modal */}
+      {showSaveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="card-premium w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-white">Save SMS Template</h2>
+              <button
+                onClick={() => setShowSaveModal(false)}
+                disabled={savingTemplate}
+                className="text-white/60 hover:text-white transition-colors disabled:opacity-50"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                const formData = new FormData(e.currentTarget)
+                const templateName = formData.get('templateName') as string
+                if (templateName.trim()) {
+                  handleSaveTemplate(templateName.trim())
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-2">
+                  Template Name
+                </label>
+                <input
+                  type="text"
+                  name="templateName"
+                  placeholder="e.g., Flash Sale SMS"
+                  className="input-premium w-full"
+                  required
+                  disabled={savingTemplate}
+                />
+              </div>
+
+              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
+                <p className="text-white/60 text-sm mb-2">Message Preview:</p>
+                <p className="text-white/80 text-sm">{customizedMessage}</p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowSaveModal(false)}
+                  disabled={savingTemplate}
+                  className="btn-secondary flex-1"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingTemplate}
+                  className="btn-primary flex-1"
+                >
+                  {savingTemplate ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save Template
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

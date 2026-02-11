@@ -21,7 +21,7 @@ export async function POST(
         stores!inner(user_id)
       `)
       .eq('id', id)
-      .single()
+      .single<any>()
 
     if (fetchError || !automation) {
       return NextResponse.json({ error: 'Automation not found' }, { status: 404 })
@@ -34,6 +34,7 @@ export async function POST(
     // Toggle the automation status
     const { data: updatedAutomation, error: updateError } = await databaseService.supabase
       .from('automation_workflows')
+      // @ts-expect-error - Supabase type generation issue
       .update({
         is_active: !automation.is_active,
         updated_at: new Date().toISOString()

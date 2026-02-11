@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Search, Zap, Mail, MessageSquare, Plus, Edit, Trash2, Power, PowerOff } from 'lucide-react'
 import Checkbox from '@/components/ui/Checkbox'
+import SubscriptionExpiryBanner from '@/components/SubscriptionExpiryBanner'
+import { useRequireAuth } from '@/lib/auth/session'
 
 interface Automation {
   id: string
@@ -106,6 +108,7 @@ const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
 ]
 
 export default function AutomationsPage() {
+  const { user } = useRequireAuth()
   const router = useRouter()
   const [automations, setAutomations] = useState<Automation[]>([])
   const [loading, setLoading] = useState(true)
@@ -224,6 +227,9 @@ export default function AutomationsPage() {
   if (showTemplates || automations.length === 0) {
     return (
       <div className="space-y-8">
+        {/* Subscription Expiry Banner */}
+        <SubscriptionExpiryBanner userId={user?.id} />
+
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-3xl font-semibold text-premium mb-2">Choose a pre-built automation workflow</h1>
@@ -344,6 +350,9 @@ export default function AutomationsPage() {
 
   return (
     <div className="space-y-8">
+      {/* Subscription Expiry Banner */}
+      <SubscriptionExpiryBanner userId={user?.id} />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-premium mb-2">Automations</h1>

@@ -52,9 +52,14 @@ export default function EmailAddressesSettings() {
         body: JSON.stringify({ email })
       })
       
+      const result = await response.json()
+      
       if (response.ok) {
         await loadEmailAddresses()
         setShowAddModal(false)
+        alert(result.message || 'Email address added. Verification can take up to 2 days.')
+      } else {
+        alert(result.error || 'Failed to add email address')
       }
     } catch (error) {
       console.error('Failed to add email:', error)
@@ -89,6 +94,7 @@ export default function EmailAddressesSettings() {
         <p className="text-sm text-white/60 mb-4">
           Add and verify your email addresses to use as senders in your email campaigns. With our Sendra shared email, 
           you can send messages immediately. If you prefer using your brand's email, verify it with your custom domain.
+          Note: Email verification through Resend API can take up to 2 days to complete.
         </p>
         <a href="#" className="text-sm text-[#16a085] hover:underline inline-flex items-center">
           Find out more <ExternalLink className="w-3 h-3 ml-1" />

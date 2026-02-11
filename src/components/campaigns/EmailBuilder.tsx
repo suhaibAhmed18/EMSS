@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Eye, Type, AlignLeft, Image as ImageIcon, Link as LinkIcon, Trash2, Plus, MoveVertical } from 'lucide-react'
+import { sanitizeHTML } from '@/lib/security/sanitize'
 
 interface EmailBlock {
   id: string
@@ -145,13 +146,51 @@ export default function EmailBuilder({ initialBlocks = [], initialHtml = '', onS
   const [templateName, setTemplateName] = useState('')
   const isInitialMount = useRef(true)
   const lastHtmlRef = useRef(initialHtml)
+  const lastSavedBlocksRef = useRef<string>('')
+
+  // Helper function to render individual blocks as HTML
+  const renderBlockHTML = useCallback((block: EmailBlock) => {
+    switch (block.type) {
+      case 'heading':
+        return `<h1 style="color: ${block.content.textColor}; font-size: ${block.content.fontSize}; text-align: ${block.content.textAlign}; margin: 20px 0;">${block.content.text}</h1>`
+      case 'paragraph':
+        return `<p style="color: ${block.content.textColor}; font-size: ${block.content.fontSize}; text-align: ${block.content.textAlign}; line-height: 1.6; margin: 15px 0; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;">${block.content.text}</p>`
+      case 'button':
+        return `<div style="text-align: ${block.content.textAlign}; margin: 30px 0;"><a href="${block.content.url}" style="display: inline-block; background-color: ${block.content.backgroundColor}; color: ${block.content.textColor}; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">${block.content.buttonText}</a></div>`
+      case 'image':
+        return `<div style="text-align: ${block.content.textAlign || 'center'}; margin: 30px 0;">${block.content.url && block.content.url !== '#' ? `<a href="${block.content.url}">` : ''}<img src="${block.content.imageUrl}" style="max-width: 100%; height: auto; border-radius: 8px; display: inline-block;" />${block.content.url && block.content.url !== '#' ? '</a>' : ''}</div>`
+      case 'spacer':
+        return `<div style="height: ${block.content.padding};"></div>`
+      default:
+        return ''
+    }
+  }, [])
+
+  // Memoize generateHTML to prevent unnecessary recreations
+  const generateHTML = useCallback(() => {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f9f9f9;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background-color: white; padding: 40px; border-radius: 8px;">
+              ${blocks.map(block => renderBlockHTML(block)).join('\n')}
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+  }, [blocks, renderBlockHTML])
 
   // Update blocks when initialHtml changes (e.g., when navigating back and forth in wizard)
   // But skip if we're just auto-saving (HTML we generated ourselves)
   useEffect(() => {
+    // Skip initial mount - already handled in useState initializer
     if (isInitialMount.current) {
-      isInitialMount.current = false
-      lastHtmlRef.current = initialHtml
       return
     }
     
@@ -167,16 +206,25 @@ export default function EmailBuilder({ initialBlocks = [], initialHtml = '', onS
       }
       lastHtmlRef.current = initialHtml
     }
-  }, [initialHtml])
+  }, [initialHtml, generateHTML])
 
   // Auto-save changes whenever blocks are modified
   useEffect(() => {
     // Skip the initial render to avoid overwriting with default blocks
-    if (blocks.length > 0) {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      lastSavedBlocksRef.current = JSON.stringify(blocks)
+      return
+    }
+    
+    // Only save if blocks actually changed
+    const currentBlocksStr = JSON.stringify(blocks)
+    if (blocks.length > 0 && currentBlocksStr !== lastSavedBlocksRef.current) {
+      lastSavedBlocksRef.current = currentBlocksStr
       const html = generateHTML()
       onSave(blocks, html)
     }
-  }, [blocks])
+  }, [blocks, generateHTML, onSave])
 
   const addBlock = (type: EmailBlock['type']) => {
     const newBlock: EmailBlock = {
@@ -227,41 +275,6 @@ export default function EmailBuilder({ initialBlocks = [], initialHtml = '', onS
     setBlocks(newBlocks)
   }
 
-  const generateHTML = () => {
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f9f9f9;">
-          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background-color: white; padding: 40px; border-radius: 8px;">
-              ${blocks.map(block => renderBlockHTML(block)).join('\n')}
-            </div>
-          </div>
-        </body>
-      </html>
-    `
-  }
-
-  const renderBlockHTML = (block: EmailBlock) => {
-    switch (block.type) {
-      case 'heading':
-        return `<h1 style="color: ${block.content.textColor}; font-size: ${block.content.fontSize}; text-align: ${block.content.textAlign}; margin: 20px 0;">${block.content.text}</h1>`
-      case 'paragraph':
-        return `<p style="color: ${block.content.textColor}; font-size: ${block.content.fontSize}; text-align: ${block.content.textAlign}; line-height: 1.6; margin: 15px 0; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;">${block.content.text}</p>`
-      case 'button':
-        return `<div style="text-align: ${block.content.textAlign}; margin: 30px 0;"><a href="${block.content.url}" style="display: inline-block; background-color: ${block.content.backgroundColor}; color: ${block.content.textColor}; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">${block.content.buttonText}</a></div>`
-      case 'image':
-        return `<div style="text-align: ${block.content.textAlign || 'center'}; margin: 30px 0;">${block.content.url && block.content.url !== '#' ? `<a href="${block.content.url}">` : ''}<img src="${block.content.imageUrl}" style="max-width: 100%; height: auto; border-radius: 8px; display: inline-block;" />${block.content.url && block.content.url !== '#' ? '</a>' : ''}</div>`
-      case 'spacer':
-        return `<div style="height: ${block.content.padding};"></div>`
-      default:
-        return ''
-    }
-  }
 
   const handleSave = () => {
     const html = generateHTML()
@@ -472,7 +485,7 @@ export default function EmailBuilder({ initialBlocks = [], initialHtml = '', onS
                           )}
                         </div>
                       ) : (
-                        <div dangerouslySetInnerHTML={{ __html: renderBlockHTML(block) }} />
+                        <div dangerouslySetInnerHTML={{ __html: sanitizeHTML(renderBlockHTML(block)) }} />
                       )}
                     </div>
                   ))}
@@ -739,7 +752,7 @@ export default function EmailBuilder({ initialBlocks = [], initialHtml = '', onS
         <div className="rounded-2xl border border-white/10 bg-gray-100 p-6">
           <div 
             className="max-w-[600px] mx-auto bg-white shadow-lg"
-            dangerouslySetInnerHTML={{ __html: generateHTML() }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHTML(generateHTML()) }}
           />
         </div>
       )}
